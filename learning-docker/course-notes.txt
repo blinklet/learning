@@ -29,7 +29,7 @@ docker run --rm -ti ubuntu sleep 5
 docker run -ti ubuntu bash -c "sleep 3; echo all done;"
 all done
 
-# Can start a container and then attach to it later
+# Can start a detached (-d) container and then attach to it later
 docker run -d -ti ubuntu bash
 docker ps
 docker attach <CONTAINER NAME>
@@ -142,6 +142,25 @@ docker build -t name-of-final-image <FOLDER containing Dockerfile>
 # Each line in dockerfile creates a new image
 # Don't have operations on large files span lines
 
+
+
+# Networking
+# Start a container that can control the host'server
+# network and has root privileges
+docker run -ti --rm --net=host --privileged=true ubuntu bash
+
+# Docker internals
+docker inspect --format '{{.State.Pid}}' <CONTAINER Networking>
+
+# Docker container with same pid as host (closer to host)
+docker run -ti --rm --privileged=true --pid=host ubuntu bash
+
+
+# Save an archive of images
+docker save -o images.tar.gz image1:v1 image2 image3
+
+# Load saved images
+docker load -i images.tar.gz
 
 
 
