@@ -1,0 +1,174 @@
+source reformat.sh
+
+docker run -ti ubuntu:latest bash
+
+cat /etc/lsb-release
+(to exit, type "exit" or CTRL-D)
+
+# in another terminal, see the container:
+docker ps --format $FORMAT
+
+# "exit" to stop a container
+# To see stopped containers:
+
+docker ps -a   # see all containers
+docker ps -l   # see last container
+
+docker commit <IMAGE ID>
+# sha256:bfc214aa8d8fa11e5402d62242352bf3e014b285740c515d20597b7302331ab3
+docker tag bfc214aa8d8fa11e5402d62242352bf3e014b285740c515d20597b7302331ab3 my-image 
+
+# Or...
+
+docker commit <IMAGE-ID> my-image-name
+
+# --rm flag deletes container after if finishes its process
+docker run --rm -ti ubuntu sleep 5 
+
+# Following runs commands, then exits container
+docker run -ti ubuntu bash -c "sleep 3; echo all done;"
+all done
+
+# Can start a detached (-d) container and then attach to it later
+docker run -d -ti ubuntu bash
+docker ps
+docker attach <CONTAINER NAME>
+
+# To leave a running interactive container
+CTRL-P
+CTRL-Q
+
+# Start a new process in a running container
+# Container running in another terminal In second terminal, start the bash
+# process in that container so you can interact with it.
+docker run -d -ti ubuntu bash
+docker exec -ti <CONTAINER NAME> bash
+
+# If you exit, attached process also exits (other terminal)
+
+# Logs
+
+docker logs <CONTAINER NAME>
+
+
+# Stop and delete containers
+
+docker kill <CONTAINER NAME>
+docker rm <CONTAINER NAME>
+
+# Constraints
+# Memory, CPU, etc...
+
+docker run --memory maximum-allowed-memory <CONTAINER NAME> ...
+docker run --cpu-shares   # relative to other comtainers
+docker run --cpu-quota    # relative to host
+
+# Lessons
+# Don't fetch dependancies when they start
+#   Include dependancies in container
+# Don't leave important things in unnamed stopped containers
+#   You may forget about them and then lose them when you delete the container
+#   Commit to an image to save a lot of work
+
+# Networking
+
+# -p flask = "publish port"
+docker run --rm -ti -p 45678:45678 -p 45679:45679 --name echo-server ubuntu bash
+nc -lp 45678 | nc -lp 45679    # in container#1
+nc host.docker.internal 45678  # in container#2
+nc host.docker.internal 45679  # in container#3
+
+docker port <CONTAINER NAME>
+
+docker network ls
+
+docker network create <NET NAME>
+
+docker network create learning
+docker run --rm -ti --net learning --name catserver ubuntu bash
+docker run --rm -ti --net learning --name dogserver ubuntu bash
+# catserver can ping dogserver
+
+docker network create catsonly
+docker network connect catsonly catserver
+docker run --rm -ti --net catsonly --name bobcatserver ubuntu bash
+# bobcatserver can ping catserver but not dogserver
+
+
+# set environment variable when starting container
+docker run --rm -ti -e SECRET=theinternetlovescats --name catserver ubuntu bash
+
+
+
+# Images
+
+docker images
+docker pull
+docker push
+docker rmi image-name:tag
+docker rmi image-ID
+
+
+
+# Volumes
+# May be persistent or ephemeral
+# Not part of Images
+
+docker run -ti -v /Users/blinklet/example:/shared-folder ubuntu bash
+# /Users/blinklet/example on host, /shared-folder on container
+
+# Sharing with other containers
+docker run -ti -v /shared-data ubuntu bash
+echo hello > /shared-data/data-file
+# In new terminal
+docker run -ti --volumes-from <CONTAINER NAME> ubuntu bash
+cd /shared-data
+# see the shared-data volume from other container
+# Volumes are ephemeral and disappear when last container using them stops
+
+
+
+# Getting images
+docker login
+docker pull debian:sid
+docker tag debian:sid blinklet/test-image-10:v99.9
+docker push blinklet/test-image-10
+
+
+# Dockerfile
+
+docker build -t name-of-final-image <FOLDER containing Dockerfile>
+
+# Each line in dockerfile creates a new image
+# Don't have operations on large files span lines
+
+
+
+# Networking
+# Start a container that can control the host'server
+# network and has root privileges
+docker run -ti --rm --net=host --privileged=true ubuntu bash
+
+# Docker internals
+docker inspect --format '{{.State.Pid}}' <CONTAINER Networking>
+
+# Docker container with same pid as host (closer to host)
+docker run -ti --rm --privileged=true --pid=host ubuntu bash
+
+
+# Save an archive of images
+docker save -o images.tar.gz image1:v1 image2 image3
+
+# Load saved images
+docker load -i images.tar.gz
+
+
+
+
+
+
+
+
+
+
+
