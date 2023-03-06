@@ -32,5 +32,15 @@ testtset001
 
 DSN=SQL-Northwind;APP=Microsoft Office 2003;WSID=DELLNOTEBOOK;DATABASE=Northwind;Network=DBMSSOCN;Address=LOCALHOST;Trusted_Connection=Yes
 
+"Provider='SQLOLEDB';Server='MySqlServer';" & _ 
+ "Database='Northwind';Integrated Security='SSPI';"
+ 
+
+Docker container with Northwind database
+https://github.com/pthom/northwind_psql
+
+Try Podman Desktop because Docker Desktop has license issues
+https://podman-desktop.io/
+
 
 
