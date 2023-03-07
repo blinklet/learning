@@ -121,25 +121,27 @@ When you are at the beginning of your learning, it may be best to use a "dummy" 
 
 If you cannot get access to HRDP when you start experimenting with data science tools like Python and SQLAlchemy, use another available database for practice. There is lots of data [available to the public](https://www.dropbase.io/post/top-11-open-and-public-data-sources) that you may want to analyze as you learn more about data science. We want to learn how to analyze data stored in a database so we need data available in that format.
 
-The best solution is to install an SQL database engine like [SQLite](https://www.sqlite.org/index.html) on your PC and download a database backup from a public repository. [Kaggle](https://www.kaggle.com/) offers many [database files that are suitable for learning data science](https://www.kaggle.com/datasets?search=SQL), like the [Formula1 SQLite database](https://www.kaggle.com/datasets/davidcochran/formula-1-race-data-sqlite). Other, more business-focused databases like the [Northwind database](https://github.com/jpwhite3/northwind-SQLite3), or the [Chinook database](https://github.com/lerocha/chinook-database), may also be interesting.
+The best solution is to install an SQL database engine like [SQLite](https://www.sqlite.org/index.html) on your PC and download a database backup from a public repository. [Kaggle](https://www.kaggle.com/) offers many [database files that are suitable for learning data science](https://www.kaggle.com/datasets?search=SQL) but you have to be careful. Many "databases" offered by Kaggle are poorly designed and cause errors when SQLAlchemy performs database reflection. Other, properly-designed databases like the [Northwind database](https://github.com/jpwhite3/northwind-SQLite3), or the [Chinook database](https://github.com/lerocha/chinook-database), may also be more suitable.
 
-In this document, we will use the Formula 1 database from Kaggle. Go to the [kaggle.com](https://www.kaggle.com/) website and select *Datasets* from the top menu. The select the *Filters* on the right side of the search field and select the *SQLite* file type and set the maximum file size to 10 MB. The Formula 1 database should be on the first page of results.
-
-Download the *[Formula 1 Race Data (SQLite)](https://www.kaggle.com/datasets?search=Formula+1&fileType=sqlite&sizeEnd=10%2CMB)* file to your computer.
+In this document, we will use the Chinook database from Kaggle. Clone the *[Chinook database repository](https://github.com/lerocha/chinook-database)* to your computer.
 
 # Python and databases
 
-Once you start using databases in Python, you start learning more about advanced Python features such as [object-oriented programming](https://www.freecodecamp.org/news/object-oriented-programming-in-python/), [data classes](https://docs.python.org/3.11/library/dataclasses.html) and [type hints](https://towardsdatascience.com/type-hints-in-python-everything-you-need-to-know-in-5-minutes-24e0bad06d0b). I leave these topics to your own study.
+We will focus on using Python instead of SQL, so we'll use an [Object Relational Mapper (ORM)](https://www.freecodecamp.org/news/what-is-an-orm-the-meaning-of-object-relational-mapping-database-tools/), instead of [SQL queries](https://www.postgresqltutorial.com/postgresql-tutorial/postgresql-select/). 
 
-# SQLite Database Engine
+To work with an ORM and to integrate it with other frameworks like Pandas, you must learn more about advanced Python features such as [object-oriented programming](https://www.freecodecamp.org/news/object-oriented-programming-in-python/), [data classes](https://docs.python.org/3.11/library/dataclasses.html) and [type hints](https://towardsdatascience.com/type-hints-in-python-everything-you-need-to-know-in-5-minutes-24e0bad06d0b). This is a good opportunity to learn more about these topics.
+
+## SQLite Database Engine
 
 [SQLite](https://www.sqlite.org/index.html) is part of the Python standard library. It provides a file-based SQL database engine that does not require the programmer to install any additional Python packages. However, you need to know the SQL query language when writing programs that use the *sqlite* Python module.
 
-In this document, we read data from the Formula 1 Race Data SQLite database file but we will use another Python package, *SQLAlchemy*, to read it instead of the built-in *sqlite* module.
+In this document, we read data from the Formula 1 Race Data SQLite database file but we will use another Python package, *SQLAlchemy*, to read it instead of Python's built-in *sqlite* module.
 
 ## SQLAlchemy
 
-[SQLAlchemy](https://www.sqlalchemy.org/) is a Python package that helps programmers interact with SQL databases, without having to learn the SQL Query language. If you use the SQLAlchemy package, which has a learning curve of its own, then you do not need to worry about learning the [SQL language differences](https://towardsdatascience.com/how-to-find-your-way-through-the-different-types-of-sql-26e3d3c20aab) between the various SQL databases like MySQL, PostgreSQL, and Microsoft SQL Server, that different data sources may use.
+[SQLAlchemy](https://www.sqlalchemy.org/) is a Python package that helps programmers interact with SQL databases, without having to learn the SQL Query language. If you use the SQLAlchemy package, which has a learning curve of its own, then your code will be independent from the [SQL language differences](https://towardsdatascience.com/how-to-find-your-way-through-the-different-types-of-sql-26e3d3c20aab) between the various SQL databases like MySQL, PostgreSQL, and Microsoft SQL Server.
+
+We'll use SQLAlchemy's [Object Relational Mapper (ORM)](https://docs.sqlalchemy.org/en/20/orm/), instead of [SQLAlchemy Core](https://docs.sqlalchemy.org/en/20/core/).
 
 ### Install SQLALchemy
 
@@ -149,14 +151,14 @@ In your virtual environment, install SQLAchemy with the following command:
 (env) > pip install SQLAlchemy
 ```
 
-### Connect to the database
+# Connect to the database
 
 Start a new Jupyter Notebook. In the first cell, enter the following code to open a connection with the database.
 
 ```python
 from sqlalchemy import create_engine, inspect
 
-engine = create_engine(r"sqlite:///C:/Users/blinklet/Documents/Formula1.sqlite")
+engine = create_engine(r"sqlite+pysqlite:///C:/Users/blinklet/Documents/chinook-database/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite")
 inspector = inspect(engine)
 
 print(inspector.get_table_names())
@@ -170,7 +172,7 @@ Run the cell. You should see the output displayed as a list containing the table
 
 You know the connection works because you were able to get the list of table names. Now, let's find out some more information about the database.
 
-### Exploring the database structure
+## Exploring the database structure
 
 Create a new cell in the Jupyter notebook, enter the following code, and run it.
 
@@ -188,7 +190,7 @@ print(inspector.get_schema_names(schema_name='main'))
 
 This is similar to the code we used to verify our connection to the SQLite database was working. It prints out the database table names. This time, we passed in the schema name as a parameter but that is only necessary if you have multiple database schemas.
 
-If you want to see all the information about each column in all the database tables, run the following code:
+To see all the information about each column in all the database tables, run the following code:
 
 ```python
 for tbl in inspector.get_table_names():
@@ -250,6 +252,10 @@ year, url,
 Table = status
 *statusId*, status,
 ```
+
+## Build SQLAlchemy model from existing database
+
+So we can select data from an existing database using SQLAlchemy, we must first build a model consisting of new classes for each table in the database. Use the [SQLAlchemy Automap extension](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html) to automatically generates mapped classes and relationships from a database schema.
 
 
 
