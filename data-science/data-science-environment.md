@@ -164,98 +164,380 @@ inspector = inspect(engine)
 print(inspector.get_table_names())
 ```
 
-Run the cell. You should see the output displayed as a list containing the table names in the Formula 1 database.
+Run the cell. You should see the output displayed as a list containing the table names in the Chinook database.
 
 ```python
-['circuits', 'constructor_results', 'constructor_standings', 'constructors', 'driver_standings', 'drivers', 'laptimes', 'pitstops', 'qualifying', 'races', 'results', 'seasons', 'status']
+['Album', 'Artist', 'Customer', 'Employee', 'Genre', 'Invoice', 'InvoiceLine', 'MediaType', 'Playlist', 'PlaylistTrack', 'Track']
 ```
 
-You know the connection works because you were able to get the list of table names. Now, let's find out some more information about the database.
-
-## Exploring the database structure
-
-Create a new cell in the Jupyter notebook, enter the following code, and run it.
-
-```python
-print(inspector.get_schema_names())
-```
-
-The output shows there is one database schema, named *main*.
-
-Create a new cell in the Jupyter notebook, enter the following code, and run it.
-
-```python
-print(inspector.get_schema_names(schema_name='main'))
-```
-
-This is similar to the code we used to verify our connection to the SQLite database was working. It prints out the database table names. This time, we passed in the schema name as a parameter but that is only necessary if you have multiple database schemas.
-
-To see all the information about each column in all the database tables, run the following code:
-
-```python
-for tbl in inspector.get_table_names():
-    print(inspector.get_columns(schema_name='main',table_name=tbl))
-```
-
-But, in this example, you only want the column names so create a new cell in the Jupyter notebook, enter the following code, and run it.
-
-```python
-for tbl in inspector.get_table_names():
-    print(f"Table = {tbl}")
-    for col in inspector.get_columns(schema_name="main",table_name=tbl):
-        star = ""
-        if col['primary_key'] == 1:
-            star = "*"
-        print(f"{star}{col['name']}{star}", end = ", ")
-    print("\n")
-```
-
-The output shows all the tables, with a list of each table's column names. Primary key columns are highlighted by asterisks. The output looks like the output shown below:
-
-```
-Table = circuits
-*circuitId*, circuitRef, name, location, country, lat, lng, alt, url, 
-
-Table = constructor_results
-*constructorResultsId*, raceId, constructorId, points, status, 
-
-Table = constructor_standings
-*constructorStandingsId*, raceId, constructorId, points, position, positionText, wins, , 
-
-Table = constructors
-constructorId, constructorRef, name, nationality, url, , 
-
-Table = driver_standings
-*driverStandingsId*, raceId, driverId, points, position, positionText, wins, 
-
-Table = drivers
-*driverId*, driverRef, number, code, forename, surname, dob, nationality, url, 
-
-Table = laptimes
-raceId, driverId, lap, position, time, milliseconds, 
-
-Table = pitstops
-raceId, driverId, stop, lap, time, duration, milliseconds, 
-
-Table = qualifying
-*qualifyId*, raceId, driverId, constructorId, number, position, q1, q2, q3, 
-
-Table = races
-*raceId*, year, round, circuitId, name, date, time, url, 
-
-Table = results
-resultId, raceId, driverId, constructorId, number, grid, position, positionText, positionOrder, points, laps, time, milliseconds, fastestLap, rank, fastestLapTime, fastestLapSpeed, statusId, 
-
-Table = seasons
-year, url, 
-
-Table = status
-*statusId*, status,
-```
+You know the connection works because you were able to get the list of table names. Now, let's find out some more information about the database. 
 
 ## Build SQLAlchemy model from existing database
 
-So we can select data from an existing database using SQLAlchemy, we must first build a model consisting of new classes for each table in the database. Use the [SQLAlchemy Automap extension](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html) to automatically generates mapped classes and relationships from a database schema.
+The process of building new classes based on an existing database schema is called [reflection](https://betterprogramming.pub/reflecting-postgresql-databases-using-python-and-sqlalchemy-48b50870d40f). If you start with a properly designed database, you can automatically generate mapped classes and relationships by using the [SQLAlchemy Automap extension](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html). 
+
+> **NOTE:** [Declarative Mapping](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html) is the "proper" way to build SQLAlchemy ORM classes. It enables program maintainers to see the database information expressed in Python code, instead of having to inspect it like we show below. See Appendix A for more information. To keep this document as short as possible, we use reflection in our example.
+
+To automatically generate an object model from the Chinook database, add a new cell to your Jupyter notebook, and enter the following code:
+
+```python
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import Session
+
+Base = automap_base()
+Base.prepare(autoload_with=engine)
+
+print(*sorted(Base.metadata.tables), sep=", ")
+```
+
+Run the cell. You should see the output displayed below, showing the table names in the Chinook database.
+
+```
+Album, Artist, Customer, Employee, Genre, Invoice, InvoiceLine, MediaType, Playlist, PlaylistTrack, Track
+```
+
+You know the SQLAlchemy reflected the database because you were able to get the list of table names from the metadata created in the new Base object. 
+
+## View the ORM classes
+
+Now, let's find out some more information about classes that reflect the database.
+
+List the SQLAlchemy classes mapped by the automap extension.
+
+```python
+print(*sorted(Base.classes.keys()), sep=", ")
+```
+
+Run the cell. You should see the output displayed below, showing the table names in the Chinook database.
+
+```
+Album, Artist, Customer, Employee, Genre, Invoice, InvoiceLine, MediaType, Playlist, Track
+```
+
+If you compare the tables to the classes, you will see that we have eleven tables but only ten classes. This is because the *PlaylistTrack* table is an [association table](https://docs.sqlalchemy.org/en/20/orm/basic_relationships.html#many-to-many) that supports a [many-to-many relationships](https://medium.com/@BryanFajardo/how-to-use-associative-entities-in-relational-databases-4456a2c71cda) between two other tables. SQLAlchemy ORM does not automatically create a class for an association table. It instead represents it as a table with foreign keys pointing to columns in the other tables.
+
+The following code will print out tables, column names, primary keys, and foreign keys. The information will help you understand the data stored in each table and the relationships between tables.
+
+
+<!-- get foreign key column name from class
+https://stackoverflow.com/questions/48517408/get-foreignkey-from-column-name-using-table-columns-data
+-->
+
+```python
+for tbl in Base.metadata.tables.values():
+    print(f"Table: {tbl.name}")
+    print("Columns: ")
+    for col in tbl.columns:
+        print(f"   {col.name:18}", end="")
+        if col.primary_key:
+            print(f"*Primary Key*   ", end="")
+        if col.foreign_keys:
+            print(f"{col.foreign_keys}", end="")
+        print()
+    print()
+```
+
+Run the cell. You should see eleven tables described, with each table's output looking like the below text:
+
+```
+Table: Track
+Columns: 
+   TrackId        *Primary Key*   
+   Name              
+   AlbumId        {ForeignKey('Album.AlbumId')}
+   MediaTypeId    {ForeignKey('MediaType.MediaTypeId')}
+   GenreId        {ForeignKey('Genre.GenreId')}
+   Composer          
+   Milliseconds      
+   Bytes             
+   UnitPrice  
+```
+
+You can [identify](https://condor.depaul.edu/gandrus/240IT/accesspages/relationships.htm) that the *PlaylistTrack* table is an association table because it has two columns and its columns are both Primary Keys and Foreign Keys, as shown below:
+
+```
+Table: PlaylistTrack
+Columns: 
+   PlaylistId     *Primary Key*   {ForeignKey('Playlist.PlaylistId')}
+   TrackId        *Primary Key*   {ForeignKey('Track.TrackId')}
+```
+
+Remember that association tables are not reflected as classes so there will be no *PlaylistTrack* class in the ORM.
+
+After looking at all the information output, you should be able to draw a diagram showing the database tables and relationships, like the one below:
+
+![](./Images/chinook-relationchart.png)
+
+## Create table classes
+
+So you can more easily use the reflected tables, assign each SQLAlchemy ORM class to a variable so it is easier to work with. Create a new Jupyter Notebook cell and run the following code:
+
+```python
+Album = Base.classes.Album
+Artist = Base.classes.Artist
+Customer = Base.classes.Customer
+Employee = Base.classes.Employee
+Genre = Base.classes.Genre
+Invoice = Base.classes.Invoice
+InvoiceLine = Base.classes.InvoiceLine
+MediaType = Base.classes.MediaType
+Playlist = Base.classes.Playlist
+Track = Base.classes.Track
+```
+
+# Get data from the database
+
+In this example, we will use the Pandas framework to get data from the database. You can also query the database using SQLAlchemy but, since we will use Pandas to analyze data, we will also use it to query data.
+
+## Install Pandas
+
+First, install the Pandas Python package. Go to the terminal window that is running your virtual environment and enter the commands:
+
+```powershell
+(env) > pip install pandas
+```
+
+When Pandas is installed, Numpy will also be installed because Pandas uses Numpy.
+
+## Convert queries into Pandas dataframes
+
+Create a new cell in your Jupyter Notebook and enter the following code:
+
+```python
+import pandas as pd
+
+
+```
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Appendix A: Generate Declarative Mapping
+
+Instead of using reflection and automap to get metadata from an existing database and automatically build the ORM, use the *[sqlacodegen](https://github.com/agronholm/sqlacodegen)* tool. It reads the structure of an existing database and generates the appropriate SQLAlchemy model code. You can then copy and paste that code into a python module and use it in your program.
+
+Install sqlacodegen in your virtual environment. At the time I wrote this document, the stable version of sqlacodegen was not compatible with Python 3.11. I installed the pre-release version so it would work with Python 3.11.
+
+```powershell
+> pip install --pre sqlacodegen
+```
+
+Then, run the sqlacodegen tool against the Chinook database.
+
+```powershell
+sqlacodegen sqlite:///C:\Users\\brian\\Documents\\chinook-database\\ChinookDatabase\\DataSources\\Chinook_Sqlite.sqlite > declare_db.py
+```
+
+This creates a file named *declare_db.py* that has the following contents that builds ORM classes and tables for the Chinook database:
+
+```python
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, NVARCHAR, Numeric, Table
+from sqlalchemy.orm import declarative_base, relationship
+
+Base = declarative_base()
+metadata = Base.metadata
+
+
+class Artist(Base):
+    __tablename__ = 'Artist'
+
+    ArtistId = Column(Integer, primary_key=True)
+    Name = Column(NVARCHAR(120))
+
+    Album = relationship('Album', back_populates='Artist_')
+
+
+class Employee(Base):
+    __tablename__ = 'Employee'
+    __table_args__ = (
+        Index('IFK_EmployeeReportsTo', 'ReportsTo'),
+    )
+
+    EmployeeId = Column(Integer, primary_key=True)
+    LastName = Column(NVARCHAR(20), nullable=False)
+    FirstName = Column(NVARCHAR(20), nullable=False)
+    Title = Column(NVARCHAR(30))
+    ReportsTo = Column(ForeignKey('Employee.EmployeeId'))
+    BirthDate = Column(DateTime)
+    HireDate = Column(DateTime)
+    Address = Column(NVARCHAR(70))
+    City = Column(NVARCHAR(40))
+    State = Column(NVARCHAR(40))
+    Country = Column(NVARCHAR(40))
+    PostalCode = Column(NVARCHAR(10))
+    Phone = Column(NVARCHAR(24))
+    Fax = Column(NVARCHAR(24))
+    Email = Column(NVARCHAR(60))
+
+    Employee = relationship('Employee', remote_side=[EmployeeId], back_populates='Employee_reverse')
+    Employee_reverse = relationship('Employee', remote_side=[ReportsTo], back_populates='Employee')
+    Customer = relationship('Customer', back_populates='Employee_')
+
+
+class Genre(Base):
+    __tablename__ = 'Genre'
+
+    GenreId = Column(Integer, primary_key=True)
+    Name = Column(NVARCHAR(120))
+
+    Track = relationship('Track', back_populates='Genre_')
+
+
+class MediaType(Base):
+    __tablename__ = 'MediaType'
+
+    MediaTypeId = Column(Integer, primary_key=True)
+    Name = Column(NVARCHAR(120))
+
+    Track = relationship('Track', back_populates='MediaType_')
+
+
+class Playlist(Base):
+    __tablename__ = 'Playlist'
+
+    PlaylistId = Column(Integer, primary_key=True)
+    Name = Column(NVARCHAR(120))
+
+    Track = relationship('Track', secondary='PlaylistTrack', back_populates='Playlist_')
+
+
+class Album(Base):
+    __tablename__ = 'Album'
+    __table_args__ = (
+        Index('IFK_AlbumArtistId', 'ArtistId'),
+    )
+
+    AlbumId = Column(Integer, primary_key=True)
+    Title = Column(NVARCHAR(160), nullable=False)
+    ArtistId = Column(ForeignKey('Artist.ArtistId'), nullable=False)
+
+    Artist_ = relationship('Artist', back_populates='Album')
+    Track = relationship('Track', back_populates='Album_')
+
+
+class Customer(Base):
+    __tablename__ = 'Customer'
+    __table_args__ = (
+        Index('IFK_CustomerSupportRepId', 'SupportRepId'),
+    )
+
+    CustomerId = Column(Integer, primary_key=True)
+    FirstName = Column(NVARCHAR(40), nullable=False)
+    LastName = Column(NVARCHAR(20), nullable=False)
+    Email = Column(NVARCHAR(60), nullable=False)
+    Company = Column(NVARCHAR(80))
+    Address = Column(NVARCHAR(70))
+    City = Column(NVARCHAR(40))
+    State = Column(NVARCHAR(40))
+    Country = Column(NVARCHAR(40))
+    PostalCode = Column(NVARCHAR(10))
+    Phone = Column(NVARCHAR(24))
+    Fax = Column(NVARCHAR(24))
+    SupportRepId = Column(ForeignKey('Employee.EmployeeId'))
+
+    Employee_ = relationship('Employee', back_populates='Customer')
+    Invoice = relationship('Invoice', back_populates='Customer_')
+
+
+class Invoice(Base):
+    __tablename__ = 'Invoice'
+    __table_args__ = (
+        Index('IFK_InvoiceCustomerId', 'CustomerId'),
+    )
+
+    InvoiceId = Column(Integer, primary_key=True)
+    CustomerId = Column(ForeignKey('Customer.CustomerId'), nullable=False)
+    InvoiceDate = Column(DateTime, nullable=False)
+    Total = Column(Numeric(10, 2), nullable=False)
+    BillingAddress = Column(NVARCHAR(70))
+    BillingCity = Column(NVARCHAR(40))
+    BillingState = Column(NVARCHAR(40))
+    BillingCountry = Column(NVARCHAR(40))
+    BillingPostalCode = Column(NVARCHAR(10))
+
+    Customer_ = relationship('Customer', back_populates='Invoice')
+    InvoiceLine = relationship('InvoiceLine', back_populates='Invoice_')
+
+
+class Track(Base):
+    __tablename__ = 'Track'
+    __table_args__ = (
+        Index('IFK_TrackAlbumId', 'AlbumId'),
+        Index('IFK_TrackGenreId', 'GenreId'),
+        Index('IFK_TrackMediaTypeId', 'MediaTypeId')
+    )
+
+    TrackId = Column(Integer, primary_key=True)
+    Name = Column(NVARCHAR(200), nullable=False)
+    MediaTypeId = Column(ForeignKey('MediaType.MediaTypeId'), nullable=False)
+    Milliseconds = Column(Integer, nullable=False)
+    UnitPrice = Column(Numeric(10, 2), nullable=False)
+    AlbumId = Column(ForeignKey('Album.AlbumId'))
+    GenreId = Column(ForeignKey('Genre.GenreId'))
+    Composer = Column(NVARCHAR(220))
+    Bytes = Column(Integer)
+
+    Playlist_ = relationship('Playlist', secondary='PlaylistTrack', back_populates='Track')
+    Album_ = relationship('Album', back_populates='Track')
+    Genre_ = relationship('Genre', back_populates='Track')
+    MediaType_ = relationship('MediaType', back_populates='Track')
+    InvoiceLine = relationship('InvoiceLine', back_populates='Track_')
+
+
+class InvoiceLine(Base):
+    __tablename__ = 'InvoiceLine'
+    __table_args__ = (
+        Index('IFK_InvoiceLineInvoiceId', 'InvoiceId'),
+        Index('IFK_InvoiceLineTrackId', 'TrackId')
+    )
+
+    InvoiceLineId = Column(Integer, primary_key=True)
+    InvoiceId = Column(ForeignKey('Invoice.InvoiceId'), nullable=False)
+    TrackId = Column(ForeignKey('Track.TrackId'), nullable=False)
+    UnitPrice = Column(Numeric(10, 2), nullable=False)
+    Quantity = Column(Integer, nullable=False)
+
+    Invoice_ = relationship('Invoice', back_populates='InvoiceLine')
+    Track_ = relationship('Track', back_populates='InvoiceLine')
+
+
+t_PlaylistTrack = Table(
+    'PlaylistTrack', metadata,
+    Column('PlaylistId', ForeignKey('Playlist.PlaylistId'), primary_key=True, nullable=False),
+    Column('TrackId', ForeignKey('Track.TrackId'), primary_key=True, nullable=False),
+    Index('IFK_PlaylistTrackTrackId', 'TrackId')
+)
+```
+
+You can see how declarative mapping shows you everything you need to know about the database structure so you can use it in your program. 
