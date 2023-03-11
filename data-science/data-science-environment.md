@@ -431,9 +431,9 @@ import pandas as pd
 
 session1 = Session(engine)
 
-df = pd.read_sql_table(table_name='Album', con=engine)
+albums = pd.read_sql_table(table_name='Album', con=engine)
 
-print(df)
+print(albums)
 ```
 
 The output looks like below. 
@@ -469,9 +469,9 @@ You will see the default maximum number of rows that can be viewed is 60 and the
 To get more interesting data sets, we need to join database tables. To keep the output readable, use the Pandas dataframe head() method, which outputs only the first 5 rows of the dataframe.
 
 ```python
-df2 = pd.read_sql_table(table_name='Artist', con=engine)
+artists = pd.read_sql_table(table_name='Artist', con=engine)
 
-print(df2.head())
+print(artists.head())
 ```
 
 ```
@@ -483,12 +483,12 @@ print(df2.head())
 4         5    Alice In Chains
 ```
 
-I want to create a dataframe that lists the full artist name associated with every album
+I want to create a dataframe that lists the full artist name associated with every album. So, I will merge the the 
 
 ```python
-mdf = pd.merge(left = df, right = df2, how = 'inner')
-print(mdf.head())
-print(mdf.shape)
+df1 = pd.merge(left = albums, right = artists, how = 'inner')
+print(df1.head())
+print(df1.shape)
 ```
 
 I used the Pandas dataframe *shape* attribute to check the number of rows and columns in the dataframe, since I am only displaying the first five rows.
@@ -506,12 +506,18 @@ I used the Pandas dataframe *shape* attribute to check the number of rows and co
 It would be better to remove the "ArtistId" column from the data frame because it is now redundant.
 
 ```python
+df1.drop('ArtistId', axis=1).rename(columns = {'Name':'Artist'})
+```
 
-x = pd.merge(df, df2)
-x = x.drop('ArtistId', axis=1)
-x = x.rename(columns = {'Name':'Artist'})
-print(x.head())
-print(x.shape)
+And you can do it all in the same statement:
+
+```python
+df2 = (pd
+     .merge(albums, artists)
+     .drop('ArtistId', axis=1)
+     .rename(columns = {'Name':'Artist'}))
+print(df2.head())
+print(df2.shape)
 ```
 ```
    AlbumId                                  Title     Artist
@@ -523,7 +529,65 @@ print(x.shape)
 (347, 3)
 ```
 
+Get the tracks data from the Track table:
 
+```python
+tracks = pd.read_sql_table(table_name='Track', con=engine)
+
+print(tracks.head())
+print(tracks.shape)
+```
+```
+   TrackId                                     Name  AlbumId  MediaTypeId  \
+0        1  For Those About To Rock (We Salute You)        1            1   
+1        2                        Balls to the Wall        2            2   
+2        3                          Fast As a Shark        3            2   
+3        4                        Restless and Wild        3            2   
+4        5                     Princess of the Dawn        3            2   
+
+   GenreId                                           Composer  Milliseconds  \
+0        1          Angus Young, Malcolm Young, Brian Johnson        343719   
+1        1                                               None        342562   
+2        1  F. Baltes, S. Kaufman, U. Dirkscneider & W. Ho...        230619   
+3        1  F. Baltes, R.A. Smith-Diesel, S. Kaufman, U. D...        252051   
+4        1                         Deaffy & R.A. Smith-Diesel        375418   
+
+      Bytes  UnitPrice  
+0  11170334       0.99  
+1   5510424       0.99  
+2   3990994       0.99  
+3   4331779       0.99  
+4   6290521       0.99  
+(3503, 9)
+```
+
+You can see how Pandas displays the nine columns by spitting the displayed tables into three "rows". And you can see that we have 3,503 rows in the Tracks table.
+
+Finally, add in the Tracks on each album from the Track table:
+
+```python
+df3 = (pd
+     .merge(df2, tracks)
+     .drop(['AlbumId','TrackId',
+            'Bytes','UnitPrice',
+            'MediaTypeId','GenreId'], axis=1)
+     .rename(columns = {'Name':'Track', 
+                        'Title':'Album',
+                        'Milliseconds':'Length(ms)'}))
+
+print(df3.shape)
+df3.head().style
+```
+
+Since we are using a Jupyter Notebook, we can use the [Pandas dataframe *style()* method](https://datascientyst.com/style-pandas-dataframe-like-pro-examples/) to output a [styled table](https://pandas.pydata.org/pandas-docs/stable/user_guide/style.html) that is more readable. The output looks like below:
+
+![](./Images/pandas001.png)
+
+Now you have a tables showing 3,503 tracks with information about the album, artists, composer, and length of each track.
+
+## Joining tables in SQLAlchemy
+
+Another way to create the dataframe containing track information is to perform the table joins in the SQLAlchemy ORM query so that Pandas receives the final dataframe in one step. This may be desirable because it simplifies your Pandas operations. In the end, you decision about whether you join and manipulate your data in Pandas or in the SQLAlchemy query will depend on issues like the size of the tables and dataframes, database performance, and teh processing and memory resources available on your workstation.
 
 
 
