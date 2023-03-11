@@ -129,3 +129,13 @@ Table = status
 ```
 > PlaylistTrack is an *association table* so it is in the list of tables but not in the list of classes
 
+Schema viewer
+https://github.com/schemaspy/schemaspy
+
+
+
+Examples of business analytics SQL queries on Chinook Database
+https://m-soro.github.io/Business-Analytics/SQL-for-Data-Analysis/L4-Project-Query-Music-Store/
+
+https://medium.com/analytics-vidhya/translating-sql-queries-to-sqlalchemy-orm-a8603085762b
+

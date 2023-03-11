@@ -287,7 +287,7 @@ In the listing above, you can [identify](https://condor.depaul.edu/gandrus/240IT
 
 After looking at all the information output, you should be able to draw a diagram showing the database tables and relationships, like the one below:
 
-![](./Images/chinook-relationchart.png)
+![Chinook database diagram showing relationships](./Images/chinook-diagram-03.png)
 
 # Build an SQLAlchemy model from an existing database
 
@@ -576,7 +576,7 @@ df3 = (pd
                         'Milliseconds':'Length(ms)'}))
 
 print(df3.shape)
-df3.head().style
+df3.head().style.format(thousands=",")
 ```
 
 Since we are using a Jupyter Notebook, we can use the [Pandas dataframe *style()* method](https://datascientyst.com/style-pandas-dataframe-like-pro-examples/) to output a [styled table](https://pandas.pydata.org/pandas-docs/stable/user_guide/style.html) that is more readable. The output looks like below:
@@ -585,14 +585,132 @@ Since we are using a Jupyter Notebook, we can use the [Pandas dataframe *style()
 
 Now you have a tables showing 3,503 tracks with information about the album, artists, composer, and length of each track.
 
+Now that you are done with this section, clode the session you created earlier:
+
+```python
+session1.close()
+```
+
+
 ## Joining tables in SQLAlchemy
 
-Another way to create the dataframe containing track information is to perform the table joins in the SQLAlchemy ORM query so that Pandas receives the final dataframe in one step. This may be desirable because it simplifies your Pandas operations. In the end, you decision about whether you join and manipulate your data in Pandas or in the SQLAlchemy query will depend on issues like the size of the tables and dataframes, database performance, and teh processing and memory resources available on your workstation.
+Another way to create the dataframe containing album and track information from the Chinook database is to perform the table joins in the SQLAlchemy ORM query so that Pandas receives the final dataframe in one step. This may be desirable because it simplifies your Pandas operations. In the end, your decision about whether you join and manipulate your data in Pandas or in the SQLAlchemy query will depend on issues like the purpose of your application, the size of the database tables and pandas dataframes, database server performance, and the processing and memory resources available on your workstation.
+
+Demonstrate how tables are linked with relationships in ORM. But we don't use this in our analysis but its good to know...
+
+```python
+session1 = Session(engine)
+
+print(f"Album table relationships")
+print()
+for relationship in inspect(Album).relationships:
+    print(f"Relationship: {relationship}")
+    print(f"Direction:    {relationship.direction}")
+    print(f"Joined Table: {relationship.target}")
+    print()
+```
+```
+Album table relationships
+
+Relationship: Album.artist
+Direction:    symbol('MANYTOONE')
+Joined Table: Artist
+
+Relationship: Album.track_collection
+Direction:    symbol('ONETOMANY')
+Joined Table: Track
+```
+
+Knowing those relationships, we can directly access data from joined tables after querying the first table. For example, here we get the first record from the Album table, then access data in the the joined Artist and Track tables using the established relationships.
+
+```python
+first_album = session1.query(Album).first()
+
+print(f"Album:  {first_album.Title}")
+print(f"Artist: {first_album.artist.Name}")
+print(f"Tracks:")
+for t in first_album.track_collection:
+    print(f"    {t.Name}")
+
+session1.close()
+```
+```
+Album:  For Those About To Rock We Salute You
+Artist: AC/DC
+Tracks:
+    For Those About To Rock (We Salute You)
+    Put The Finger On You
+    Let's Get It Up
+    Inject The Venom
+    Snowballed
+    Evil Walks
+    C.O.D.
+    Breaking The Rules
+    Night Of The Long Knives
+    Spellbound
+```
+
+First attempt at query with join
+
+```python
+session1 = Session(engine)
+
+print(f"Get inner join of tables Album, Track, and Artist")
+q = (session1.query(Album, Track, Artist)
+     .join(Track)
+     .join(Artist)
+    )
+
+df4 = pd.read_sql(sql=q.statement, con=engine)
+
+print(df4.shape)
+display(df4.head())
+
+session1.close()
+```
+
+Result
+
+![](./Images/pandas008.png)
 
 
+See unneeded columns, and column names assigned by SQLAlchemy query result. Pick specific table columns and use Pandas to rename columns (I cannot figure out how to rename columns when querying data).
+
+```python
+session1 = Session(engine)
+
+print(f"Get inner join of tables Album, Track, and Artist")
+q = (session1
+     .query(Album.Title, 
+            Artist.Name, 
+            Track.Name, 
+            Track.Composer, 
+            Track.Milliseconds)
+     .join(Track)
+     .join(Artist)
+    )
+
+df4 = pd.read_sql(sql=q.statement, con=engine)
+
+df5 = (df4.rename(columns = {'Title':'Album', 
+                        'Name':'Artist',
+                        'Name_1':'Track',
+                        'Milliseconds':'Length(ms)'}))
+
+print(df5.shape)
+display(df5.head())
+
+session1.close()
+```
+
+Result
+
+![](./Images/pandas010.png)
 
 
+You see that joining tables and selecting specific columns in an SQLAlchemy query can give you the data you need in one step.
 
+Data selection, filtering, and manipulation can be done on either the SQL database server, using SQLAlcehmy ORM queries, or on your workstation, using Pandas. 
 
 
 
