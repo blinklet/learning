@@ -153,30 +153,147 @@ In your virtual environment, install SQLAchemy with the following command:
 
 # Connect to the database
 
-Start a new Jupyter Notebook. In the first cell, enter the following code to open a connection with the database.
+Start a new Jupyter Notebook. In the first cell, enter the following code to prepare a connection to the database.
 
 ```python
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine
 
-engine = create_engine(r"sqlite+pysqlite:///C:/Users/blinklet/Documents/chinook-database/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite")
+engine = create_engine(r"sqlite:///C:/Users/blinklet/Documents/chinook-database/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite")
+```
+
+Run the cell. The code will create an [engine](https://docs.sqlalchemy.org/en/20/core/engines_connections.html) object which represents a connection to the database specified in the URL passed to the *create_engine* function.
+
+## Inspecting the database schema
+
+Now that you connected to the database, you will want to study its structure. You may have some documentation that describes the database structure but, if not, you can learn about the database schema by using the [SQLAlchemy *inspect* module](https://docs.sqlalchemy.org/en/20/core/inspection.html#module-sqlalchemy.inspection).
+
+Create a new cell in the notebook and enter the following code:
+
+``` python
+from sqlalchemy import inspect
+
 inspector = inspect(engine)
 
 print(inspector.get_table_names())
 ```
 
-Run the cell. You should see the output displayed as a list containing the table names in the Chinook database.
+Run the cell. You created a new objected named *inspector* that contains You should see the output displayed as a list containing the table names in the Chinook database.
 
 ```python
 ['Album', 'Artist', 'Customer', 'Employee', 'Genre', 'Invoice', 'InvoiceLine', 'MediaType', 'Playlist', 'PlaylistTrack', 'Track']
 ```
 
-You know the connection works because you were able to get the list of table names. Now, let's find out some more information about the database. 
+You know the connection works because you were able to get the list of table names. Now, let's find out some more information about the database.
 
-## Build SQLAlchemy model from existing database
+Since the inspect function outputs data as iterables, we will use Python's pretty print module, *pprint*, to display inspection results. Create a new cell and enter the following code: 
 
-The process of building new classes based on an existing database schema is called [reflection](https://betterprogramming.pub/reflecting-postgresql-databases-using-python-and-sqlalchemy-48b50870d40f). If you start with a properly designed database, you can automatically generate mapped classes and relationships by using the [SQLAlchemy Automap extension](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html). 
 
-> **NOTE:** [Declarative Mapping](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html) is the "proper" way to build SQLAlchemy ORM classes. It enables program maintainers to see the database information expressed in Python code, instead of having to inspect it like we show below. See Appendix A for more information. To keep this document as short as possible, we use reflection in our example.
+```python
+from pprint import pprint
+
+# Columns in table "Album"
+pprint(inspector.get_columns("Album"))
+print()
+
+# Primary Key for table "Album"
+pprint(inspector.get_pk_constraint("Album"))
+```
+
+When you run the code, you see that the *get_columns* method returns a list of dictionaries which contain information about each column in the table. "Album". The you see the *get_pk_constraint* method returns a dictionary containing a list of the table's primary keys.
+
+The output should look like the listing below:
+
+```
+[{'autoincrement': 'auto',
+  'default': None,
+  'name': 'AlbumId',
+  'nullable': False,
+  'primary_key': 1,
+  'type': INTEGER()},
+ {'autoincrement': 'auto',
+  'default': None,
+  'name': 'Title',
+  'nullable': False,
+  'primary_key': 0,
+  'type': NVARCHAR(length=160)},
+ {'autoincrement': 'auto',
+  'default': None,
+  'name': 'ArtistId',
+  'nullable': False,
+  'primary_key': 0,
+  'type': INTEGER()}]
+
+{'constrained_columns': ['AlbumId'], 'name': None}
+```
+
+You can write a program that maps the tables, columns, and relationships in the database schema by iterating through the *inspection* object's attributes. Enter the code shown below into a new cell:
+
+```python
+for table_name in inspector.get_table_names():
+
+    print(f"Table = {table_name}")
+    
+    print(f"Columns = ", end="")
+    col_names_list = []
+    for col in inspector.get_columns(table_name):
+        col_names_list.append(col['name'])
+    print(*col_names_list, sep=", ")
+    
+    print(f"Primary Keys = ", end="")
+    pk_list = inspector.get_pk_constraint(table_name)
+    pk_name_list = pk_list["constrained_columns"]
+    print(*pk_name_list, sep=", ")
+
+    fk_list = inspector.get_foreign_keys(table_name)
+    if fk_list:
+        print(f"Foreign Keys:")
+        fk_name_list = []
+        fk_reftbl_list = []
+        fk_refcol_list = []
+        
+        for fk in fk_list:
+            fk_name_list.append(*fk['constrained_columns'])
+            fk_reftbl_list.append(fk['referred_table'])
+            fk_refcol_list.append(*fk['referred_columns'])
+            
+        fk_info = zip(fk_name_list, fk_reftbl_list, fk_refcol_list)
+        
+        for n, t, c in fk_info:
+            print(f"    {n} ---> {t}:{c}")
+
+    print()
+```
+
+Run the cell. The output is a long list showing information about each table. We show a subset of the output, below, showing tables *PlaylistTrack* and *Track*:
+
+```
+Table = PlaylistTrack
+Columns = PlaylistId, TrackId
+Primary Keys = PlaylistId, TrackId
+Foreign Keys:
+    TrackId ---> Track:TrackId
+    PlaylistId ---> Playlist:PlaylistId
+
+Table = Track
+Columns = Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, TrackId
+Primary Keys = TrackId
+Foreign Keys:
+    MediaTypeId ---> MediaType:MediaTypeId
+    GenreId ---> Genre:GenreId
+    AlbumId ---> Album:AlbumId
+```
+
+In the listing above, you can [identify](https://condor.depaul.edu/gandrus/240IT/accesspages/relationships.htm) that the *PlaylistTrack* table is an [association table](https://docs.sqlalchemy.org/en/20/orm/basic_relationships.html#many-to-many) that supports a [many-to-many relationships](https://medium.com/@BryanFajardo/how-to-use-associative-entities-in-relational-databases-4456a2c71cda) between two other tables. A typical association table has two columns and each of its columns are both Primary Keys and Foreign Keys. Association tables are declared differently in the ORM than normal tables in the SQLAlchemy ORM. We'll cover more about that in the next section.
+
+After looking at all the information output, you should be able to draw a diagram showing the database tables and relationships, like the one below:
+
+![](./Images/chinook-relationchart.png)
+
+# Build an SQLAlchemy model from an existing database
+
+The process of automatically building new classes based on an existing database schema is called [reflection](https://betterprogramming.pub/reflecting-postgresql-databases-using-python-and-sqlalchemy-48b50870d40f). If you start with a properly designed database, you can map classes and relationships using the [SQLAlchemy Automap extension](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html). Database reflection is useful when writing simple, single-use scripts like the ones in this document.
+
+Instead of using reflection, it is better to use [Declarative Mapping](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html) to build SQLAlchemy ORM classes. It enables program maintainers to see the database information expressed in Python code. It also makes a program more robust, because you will be better able to predict the impact that changes in the database schema will have on your program. See *Appendix A* for more information. However, Declarative Mapping requires you to learn more about the ORM than we can cover in this document. So, we use reflection in our example.
 
 To automatically generate an object model from the Chinook database, add a new cell to your Jupyter notebook, and enter the following code:
 
@@ -187,48 +304,48 @@ from sqlalchemy.orm import Session
 Base = automap_base()
 Base.prepare(autoload_with=engine)
 
-print(*sorted(Base.metadata.tables), sep=", ")
+print(*Base.metadata.tables, sep=", ")
 ```
 
-Run the cell. You should see the output displayed below, showing the table names in the Chinook database.
+Run the cell. You used the *automap_base* function to create a [declarative base class](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html#basic-use) named *Base* and then used its *prepare* method to reflect the schema and produce mappings. You should see the output displayed below, showing the table names in the Chinook database.
 
 ```
-Album, Artist, Customer, Employee, Genre, Invoice, InvoiceLine, MediaType, Playlist, PlaylistTrack, Track
+Album, Artist, Customer, Employee, Genre, Invoice, InvoiceLine, Track, MediaType, Playlist, PlaylistTrack
 ```
 
-You know the SQLAlchemy reflected the database because you were able to get the list of table names from the metadata created in the new Base object. 
+You know the Base object now maps the database structure because you were able to get the list of table names from the metadata created in the new Base object.
+
+The output is similar to what we saw when we used the *inspect* function, previously because *inspect* also uses reflection to get the database schema information.
 
 ## View the ORM classes
 
-Now, let's find out some more information about classes that reflect the database.
+The reason programmers use the SQLAlchemy ORM is so that they can treat database tables like Python classes in their programs and work in the "Pythonic" way. Let's find out some more information about the mapped classes that reflect the tables in the database.
 
 List the SQLAlchemy classes mapped by the automap extension.
 
 ```python
-print(*sorted(Base.classes.keys()), sep=", ")
+print(*Base.classes.keys(), sep=", ")
 ```
 
 Run the cell. You should see the output displayed below, showing the table names in the Chinook database.
 
 ```
-Album, Artist, Customer, Employee, Genre, Invoice, InvoiceLine, MediaType, Playlist, Track
+Album, Artist, Customer, Employee, Genre, Invoice, InvoiceLine, Track, MediaType, Playlist
 ```
 
-If you compare the tables to the classes, you will see that we have eleven tables but only ten classes. This is because the *PlaylistTrack* table is an [association table](https://docs.sqlalchemy.org/en/20/orm/basic_relationships.html#many-to-many) that supports a [many-to-many relationships](https://medium.com/@BryanFajardo/how-to-use-associative-entities-in-relational-databases-4456a2c71cda) between two other tables. SQLAlchemy ORM does not automatically create a class for an association table. It instead represents it as a table with foreign keys pointing to columns in the other tables.
+If you compare the tables found using the *inspect* function and the *Base.metadata* object to the classes found in the *Base.classes* object, you will see that we have eleven tables but only ten classes. This is because the *PlaylistTrack* table is an association. SQLAlchemy ORM does not automatically create a class for an association table. It instead represents it as a table with foreign keys pointing to columns in the other tables.
 
-The following code will print out tables, column names, primary keys, and foreign keys. The information will help you understand the data stored in each table and the relationships between tables.
+## ORM Metadata
 
-
-<!-- get foreign key column name from class
-https://stackoverflow.com/questions/48517408/get-foreignkey-from-column-name-using-table-columns-data
--->
+You can view more information about the tables declared in the ORM by parsing through the Base class's metadata. For example, the following code will print out table name, column names, primary keys, and foreign keys of any table.
 
 ```python
-for tbl in Base.metadata.tables.values():
-    print(f"Table: {tbl.name}")
-    print("Columns: ")
-    for col in tbl.columns:
-        print(f"   {col.name:18}", end="")
+def table_info(table_name):
+    table = Base.metadata.tables[table_name]
+    print(f"Table: {table_name}")
+    print(f"Columns: ")
+    for col in table.columns:
+        print(f"   {col.name:15}", end="")
         if col.primary_key:
             print(f"*Primary Key*   ", end="")
         if col.foreign_keys:
@@ -237,40 +354,41 @@ for tbl in Base.metadata.tables.values():
     print()
 ```
 
-Run the cell. You should see eleven tables described, with each table's output looking like the below text:
+Call the *table_info()* function, as shown below:
 
-```
-Table: Track
-Columns: 
-   TrackId        *Primary Key*   
-   Name              
-   AlbumId        {ForeignKey('Album.AlbumId')}
-   MediaTypeId    {ForeignKey('MediaType.MediaTypeId')}
-   GenreId        {ForeignKey('Genre.GenreId')}
-   Composer          
-   Milliseconds      
-   Bytes             
-   UnitPrice  
+```python
+table_info("PlaylistTrack")
+table_info("Track")
 ```
 
-You can [identify](https://condor.depaul.edu/gandrus/240IT/accesspages/relationships.htm) that the *PlaylistTrack* table is an association table because it has two columns and its columns are both Primary Keys and Foreign Keys, as shown below:
+You should see the two tables described, with each table's output looking like the below text:
 
 ```
 Table: PlaylistTrack
 Columns: 
    PlaylistId     *Primary Key*   {ForeignKey('Playlist.PlaylistId')}
    TrackId        *Primary Key*   {ForeignKey('Track.TrackId')}
+
+Table: Track
+Columns: 
+   TrackId        *Primary Key*   
+   Name           
+   AlbumId        {ForeignKey('Album.AlbumId')}
+   MediaTypeId    {ForeignKey('MediaType.MediaTypeId')}
+   GenreId        {ForeignKey('Genre.GenreId')}
+   Composer       
+   Milliseconds   
+   Bytes          
+   UnitPrice 
 ```
 
-Remember that association tables are not reflected as classes so there will be no *PlaylistTrack* class in the ORM.
+<!--change-->
 
-After looking at all the information output, you should be able to draw a diagram showing the database tables and relationships, like the one below:
+Again, you can see that the *PlaylistTrack* table is an association table. Remember that association tables are not reflected as classes so there will be no *PlaylistTrack* class in the ORM. But, the association table appears in the metadata.
 
-![](./Images/chinook-relationchart.png)
+## Assign table classes
 
-## Create table classes
-
-So you can more easily use the reflected tables, assign each SQLAlchemy ORM class to a variable so it is easier to work with. Create a new Jupyter Notebook cell and run the following code:
+So that you can more easily use the reflected tables, assign each SQLAlchemy ORM class to a variable so it is easier to work with. Create a new Jupyter Notebook cell and run the following code:
 
 ```python
 Album = Base.classes.Album
@@ -283,11 +401,14 @@ InvoiceLine = Base.classes.InvoiceLine
 MediaType = Base.classes.MediaType
 Playlist = Base.classes.Playlist
 Track = Base.classes.Track
+playlisttrack = Base.metadata.tables['PlaylistTrack']
 ```
 
 # Get data from the database
 
-In this example, we will use the Pandas framework to get data from the database. You can also query the database using SQLAlchemy but, since we will use Pandas to analyze data, we will also use it to query data.
+Up until now, we've been playing with the information you can get about the database schema and how to define the ORM's declarative base object automatically when working with an existing database. Next, we need to get data out of that database so we can analyze it.
+
+In this example, we will use the [Pandas framework](https://pandas.pydata.org/) to get data from the database. You can also query the database using SQLAlchemy but, since we will use Pandas to analyze data, we will also use it to query data.
 
 ## Install Pandas
 
@@ -297,23 +418,110 @@ First, install the Pandas Python package. Go to the terminal window that is runn
 (env) > pip install pandas
 ```
 
-When Pandas is installed, Numpy will also be installed because Pandas uses Numpy.
+When Pandas is installed, [Numpy](https://numpy.org/) will also be installed because Pandas uses Numpy.
 
-## Convert queries into Pandas dataframes
+## Query data and convert into Pandas dataframes
 
-Create a new cell in your Jupyter Notebook and enter the following code:
+Create an SQLAlchemy query and load its results into a Pandas dataframe. First, simply open a [session](https://docs.sqlalchemy.org/en/20/orm/session_basics.html) abd ask for all data from one table.
+
+Create a new cell in your Jupyter Notebook and run the following code:
 
 ```python
 import pandas as pd
 
+session1 = Session(engine)
 
+df = pd.read_sql_table(table_name='Album', con=engine)
+
+print(df)
 ```
 
+The output looks like below. 
 
+```
+     AlbumId                                              Title  ArtistId
+0          1              For Those About To Rock We Salute You         1
+1          2                                  Balls to the Wall         2
+2          3                                  Restless and Wild         2
+3          4                                  Let There Be Rock         1
+4          5                                           Big Ones         3
+..       ...                                                ...       ...
+342      343                             Respighi:Pines of Rome       226
+343      344  Schubert: The Late String Quartets & String Qu...       272
+344      345                                Monteverdi: L'Orfeo       273
+345      346                              Mozart: Chamber Music       274
+346      347  Koyaanisqatsi (Soundtrack from the Motion Pict...       275
 
+[347 rows x 3 columns]
+```
 
+The output shows that Pandas successfully [queried the database](https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html) and saved the query results in a dataframe. Pandas automatically truncates the output if the number of rows or columns exceeds the default length. You can see the default length by executing the following code:
 
+```python
+print(pd.options.display.max_rows)
+print(pd.options.display.max_columns)
+```
 
+You will see the default maximum number of rows that can be viewed is 60 and the default maximum number of columns that can be viewed is 20.
+
+## Joining datafames
+
+To get more interesting data sets, we need to join database tables. To keep the output readable, use the Pandas dataframe head() method, which outputs only the first 5 rows of the dataframe.
+
+```python
+df2 = pd.read_sql_table(table_name='Artist', con=engine)
+
+print(df2.head())
+```
+
+```
+   ArtistId               Name
+0         1              AC/DC
+1         2             Accept
+2         3          Aerosmith
+3         4  Alanis Morissette
+4         5    Alice In Chains
+```
+
+I want to create a dataframe that lists the full artist name associated with every album
+
+```python
+mdf = pd.merge(left = df, right = df2, how = 'inner')
+print(mdf.head())
+print(mdf.shape)
+```
+
+I used the Pandas dataframe *shape* attribute to check the number of rows and columns in the dataframe, since I am only displaying the first five rows.
+
+```
+   AlbumId                                  Title  ArtistId       Name
+0        1  For Those About To Rock We Salute You         1      AC/DC
+1        4                      Let There Be Rock         1      AC/DC
+2        2                      Balls to the Wall         2     Accept
+3        3                      Restless and Wild         2     Accept
+4        5                               Big Ones         3  Aerosmith
+(347, 4)
+```
+
+It would be better to remove the "ArtistId" column from the data frame because it is now redundant.
+
+```python
+
+x = pd.merge(df, df2)
+x = x.drop('ArtistId', axis=1)
+x = x.rename(columns = {'Name':'Artist'})
+print(x.head())
+print(x.shape)
+```
+```
+   AlbumId                                  Title     Artist
+0        1  For Those About To Rock We Salute You      AC/DC
+1        4                      Let There Be Rock      AC/DC
+2        2                      Balls to the Wall     Accept
+3        3                      Restless and Wild     Accept
+4        5                               Big Ones  Aerosmith
+(347, 3)
+```
 
 
 
