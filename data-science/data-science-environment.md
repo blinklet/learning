@@ -502,6 +502,7 @@ I used the Pandas dataframe *shape* attribute to check the number of rows and co
 4        5                               Big Ones         3  Aerosmith
 (347, 4)
 ```
+Pandas does not know about the relationships between the tables in the database. Pandas assumes that the inner join will be performed by matching columns from each dataframe that have the same name. If you need to join on columns that do not have the same names, you can specify which columns to join on in the Pandas *merge()* method's parameters.
 
 It would be better to remove the "ArtistId" column from the data frame because it is now redundant.
 
@@ -509,7 +510,7 @@ It would be better to remove the "ArtistId" column from the data frame because i
 df1.drop('ArtistId', axis=1).rename(columns = {'Name':'Artist'})
 ```
 
-And you can do it all in the same statement:
+And you can do it all in the same merge statement:
 
 ```python
 df2 = (pd
@@ -585,16 +586,15 @@ Since we are using a Jupyter Notebook, we can use the [Pandas dataframe *style()
 
 Now you have a tables showing 3,503 tracks with information about the album, artists, composer, and length of each track.
 
-Now that you are done with this section, clode the session you created earlier:
+Now that you are done with this section, close the session you created earlier:
 
 ```python
 session1.close()
 ```
 
+## Querying joined tables in SQLAlchemy
 
-## Joining tables in SQLAlchemy
-
-Another way to create the dataframe containing album and track information from the Chinook database is to perform the table joins in the SQLAlchemy ORM query so that Pandas receives the final dataframe in one step. This may be desirable because it simplifies your Pandas operations. In the end, your decision about whether you join and manipulate your data in Pandas or in the SQLAlchemy query will depend on issues like the purpose of your application, the size of the database tables and pandas dataframes, database server performance, and the processing and memory resources available on your workstation.
+Another way to create the dataframe containing album and track information from the Chinook database is to perform the table joins in the SQLAlchemy ORM query so that Pandas receives the final dataframe in one step. This may be desirable because it simplifies your Pandas operations. 
 
 Demonstrate how tables are linked with relationships in ORM. But we don't use this in our analysis but its good to know...
 
@@ -622,6 +622,29 @@ Joined Table: Track
 ```
 
 Knowing those relationships, we can directly access data from joined tables after querying the first table. For example, here we get the first record from the Album table, then access data in the the joined Artist and Track tables using the established relationships.
+
+
+
+
+
+
+
+
+
+
+<!-- UPDATE THE DOC TO USE EXECUTE INSTEAD OF QUERY. EXECUTE IS THE MODERN WAY AND QUERY IS LEGACY
+
+https://www.reddit.com/r/learnpython/comments/r1v776/sqlalchemy_difference_between_sessionexecute_and/
+-->
+
+
+
+
+
+
+
+
+
 
 ```python
 first_album = session1.query(Album).first()
@@ -674,31 +697,26 @@ Result
 ![](./Images/pandas008.png)
 
 
-See unneeded columns, and column names assigned by SQLAlchemy query result. Pick specific table columns and use Pandas to rename columns (I cannot figure out how to rename columns when querying data).
+See unneeded columns, and column names assigned by SQLAlchemy query result. Pick specific table columns and [rename them](https://devsheet.com/code-snippet/column-name-as-alias-name-sqlalchemy/) in the query statement.
 
 ```python
 session1 = Session(engine)
 
 print(f"Get inner join of tables Album, Track, and Artist")
 q = (session1
-     .query(Album.Title, 
-            Artist.Name, 
-            Track.Name, 
+     .query(Album.Title.label("Album"),
+            Artist.Name.label("Artist"),
+            Track.Name.label("Track"),
             Track.Composer, 
-            Track.Milliseconds)
+            Track.Milliseconds.label("Length(ms)"))
      .join(Track)
      .join(Artist)
     )
 
 df4 = pd.read_sql(sql=q.statement, con=engine)
 
-df5 = (df4.rename(columns = {'Title':'Album', 
-                        'Name':'Artist',
-                        'Name_1':'Track',
-                        'Milliseconds':'Length(ms)'}))
-
-print(df5.shape)
-display(df5.head())
+print(df4.shape)
+display(df4.head().style.format(thousands=","))
 
 session1.close()
 ```
@@ -710,24 +728,284 @@ Result
 
 You see that joining tables and selecting specific columns in an SQLAlchemy query can give you the data you need in one step.
 
-Data selection, filtering, and manipulation can be done on either the SQL database server, using SQLAlcehmy ORM queries, or on your workstation, using Pandas. 
+# Pandas or SQL?
+
+Data selection, filtering, and manipulation can be done on either the SQL database server, using SQLAlchemy ORM queries, or on your workstation, using Pandas. 
+
+In the end, your decision about whether you join and manipulate your data in Pandas or in the SQLAlchemy query will depend on issues like the purpose of your application, the size of the database tables and pandas dataframes, database server performance, and the processing and memory resources available on your workstation.
+
+In my opinion, if your data comes from a database, you should do most of your data joining and filtering using the database and then use Pandas for additional data cleaning and analysis. If your data comes from spreadsheets file or CSV files, you have to use Pandas to combine, filter, clean, and analyze data.
+
+## Data analysis using Pandas
+
+Use SQLAlchemy ORM to create a joined table containing the data we need for analysis and load that data into a dataframe. 
+
+For example, Load data from the database into a dataframe named *df4* that contains track information, including prices. 
+
+```python
+session1 = Session(engine)
+
+albums = pd.read_sql_table(table_name='Album', con=engine)
+artists = pd.read_sql_table(table_name='Artist', con=engine)
+tracks = pd.read_sql_table(table_name='Track', con=engine)
+
+session1.close()
+
+df1 = (pd
+     .merge(albums, artists)
+     .rename(columns = {'Name':'Artist'}))
+
+data = (pd
+     .merge(df1, tracks)
+     .rename(columns = {'Name':'Track', 
+                        'Title':'Album',
+                        'Milliseconds':'Length'}))
+
+print(f"Longest track: {data.Length.max()}")
+print(f"Shortest track: {data.Length.min()}")
+print(f"How many blanks in Composer column?: "
+      f"{data.Composer.isnull().sum()}")
+print(f"Track length mean: {data.Length.mean()}")
+print(f"Track length median: {data.Length.median()}")
+print(f"Artist mode: {data.Artist.mode()[0]}")
+print(f"Correlation between Length and UnitPrice: "
+      f"{data['Length'].corr(data['UnitPrice'])}")
+print(f"Track length standard deviation: "
+      f"{data.Length.std()}")
+```
+
+Which outputs the following:
+
+```
+Longest track: 5286953
+Shortest track: 1071
+How many blanks in Composer column?: 978
+Track length mean: 393599.2121039109
+Track length median: 255634.0
+Artist mode: Iron Maiden
+Correlation between Length and UnitPrice: 0.9317964749112717
+Track length standard deviation: 535005.4352066235
+```
+
+Group and select data:
+
+```python
+from tabulate import tabulate
+
+print(f"Track length standard deviation for a sample of artists:")
+print(tabulate(
+        data.groupby(['Artist'])['Length']
+        .std()
+        .dropna()
+        .sample(3)
+        .to_frame(), 
+        headers = ['Artist','Track Length\nStd Dev'], 
+        tablefmt="grid"))
+print()
+print(f"Longest tracks, with artist name:")
+print(tabulate(
+        data[['Track','Length','Artist']]
+        .nlargest(3, 'Length'), 
+        headers="keys", 
+        tablefmt='grid', 
+        showindex=False))
+print()
+print(f"Number of tracks per artist:")
+print(tabulate(
+        data
+        .groupby('Artist')['Track']
+        .count()
+        .sample(3)
+        .to_frame(), 
+        headers = ['Artist','# Tracks'], 
+        tablefmt="grid"))
+print()
+print(f"Shortest track by Artist=Guns N' Roses: ")
+gnr = data.loc[df5['Artist'] == "Guns N' Roses"]
+gnr_shortest = gnr[['Track','Length']].nsmallest(3, 'Length')
+print(tabulate(
+        gnr_shortest, 
+        headers="keys", 
+        tablefmt='grid', 
+        showindex=False))       
+```
+
+Which outputs the following:
+
+```
+Track length standard deviation for a sample of artists:
++--------------------+----------------+
+| Artist             |   Track Length |
+|                    |        Std Dev |
++====================+================+
+| Vinícius De Moraes |        87110.6 |
++--------------------+----------------+
+| Gene Krupa         |        46111.3 |
++--------------------+----------------+
+| Marcos Valle       |        44225.8 |
++--------------------+----------------+
+
+Longest tracks, with artist name:
++-----------------------------+----------+--------------------------------+
+| Track                       |   Length | Artist                         |
++=============================+==========+================================+
+| Occupation / Precipice      |  5286953 | Battlestar Galactica           |
++-----------------------------+----------+--------------------------------+
+| Through a Looking Glass     |  5088838 | Lost                           |
++-----------------------------+----------+--------------------------------+
+| Greetings from Earth, Pt. 1 |  2960293 | Battlestar Galactica (Classic) |
++-----------------------------+----------+--------------------------------+
+
+Number of tracks per artist:
++---------------+------------+
+| Artist        |   # Tracks |
++===============+============+
+| Planet Hemp   |         16 |
++---------------+------------+
+| Guns N' Roses |         42 |
++---------------+------------+
+| Deep Purple   |         92 |
++---------------+------------+
+
+Shortest track by Artist=Guns N' Roses: 
++----------------+----------+
+| Track          |   Length |
++================+==========+
+| Atrás da Porta |   166608 |
++----------------+----------+
+| Casa no Campo  |   170788 |
++----------------+----------+
+| Fascinação     |   180793 |
++----------------+----------+
+```
+
+As you can see, above, we read the data from three SQL database tables into Pandas dataframes and then we closed the connection to the database session. After that, we merged the dataframes and performed all data selction and calculations using Pandas.
+
+## Data analysis using SQLAlchemy queries
+
+The following SQLAlchemy queries will display similar results to the Pandas dataframe work we did previously. 
+
+To display the length of the longest track:
+
+### Longest track
+
+To find the longest track, I queried the Milliseconds column in the Track table, sorted its contents in descending order, and returned the first result.
+
+```python
+session1 = Session(engine)
+    
+q = (session1
+        .query(func.max(Track.Milliseconds))
+    )
+
+length = q[0]
+print(f"Longest track length: {length}")
+```
+
+The statement `length = q[0]` is actually doing a lotmore than it looks like. The object, *q* returned by the query uses [lazy loading](https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html#lazy-loading) so it does not contain any data until you assign it to another object or cause it to iterate at least once. When the object does load data, it returns row data in a tuple. Since you queried only one row from the column, the tuple contains only one value. You [get that value by indexing](https://docs.sqlalchemy.org/en/20/tutorial/data_select.html#selecting-orm-entities-and-columns) the tuple.
+
+I could also use the *iter()* function to cause the row object to return the tuple and then use the *next* functions to return the first item in the tuple. Then the statement would be `length = next(iter(q))`. 
+
+The output is:
+
+```
+Longest track: 5286953
+```
+
+Another way to get a single result from an SQL query is to use the session's [*scalar()* method](https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.scalars), which returns the the first column of the returned row instead of a tuple containing all the items in the row.
+
+```python
+session1 = Session(engine)
+    
+length = (session1
+            .query(func.max(Track.Milliseconds))
+            .scalar()
+         )
+
+print(f"Longest track length: {length}")
+```
+### Shortest track
+
+
+```python
+length = (session1
+            .query(func.min(Track.Milliseconds))
+            .scalar()
+         )
+
+print(f"Shortest track length: {length}")
+```
+```
+Shortest track length: 1071
+```
+
+other...
+
+```python
+print(f"How many blanks in Composer column?: {df5.Length.isnull().sum()}")
+print(f"Track length mean: {df5.Length.mean()}")
+print(f"Track length median: {df5.Length.median()}")
+print(f"Artist mode: {df5.Artist.mode()[0]}")
+print(f"Correlation between Length and Length: {df5['Length'].corr(df5['Length'])}")
+print(f"Track length standard deviation: {df5.Length.std()}")   
+```
+
+
+```python
+print(f"Track length standard deviation for a sample of artists:")
+print(f"{df5.groupby(['Artist'])['Length'].std().dropna().sample(3)}")
+print()
+print(f"Longest tracks, with artist name:")
+print(f"{df5[['Track','Length','Artist']].nlargest(3, 'Length')}")
+print()
+print(f"Number of tracks per artist")
+print(f"{df5.groupby(['Artist'])['Track'].count().sample(3)}")
+print()
+print(f"Shortest track by Artist=Guns N' Roses: ")
+gnr = df5.loc[df5['Artist'] == "Guns N' Roses"]
+print(gnr[['Track','Length']].nsmallest(3, 'Length'))   
+```
 
 
 
 
 
 
+### Full program to create Excel spreadsheet with track info
 
+```python
+from sqlalchemy import create_engine, inspect
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import Session
+import pandas as pd
 
+engine = create_engine(r"sqlite:///C:/Users/blinklet/Documents/chinook-database/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite")
+Base = automap_base()
+Base.prepare(autoload_with=engine)
 
+Album = Base.classes.Album
+Artist = Base.classes.Artist
+Track = Base.classes.Track
 
+with Session(engine) as session1:
 
+    q = (session1
+        .query(Album.Title.label("Album"),
+                Artist.Name.label("Artist"),
+                Track.Name.label("Track"),
+                Track.Composer, 
+                Track.Milliseconds.label("Length"),
+                Track.UnitPrice)
+        .join(Track)
+        .join(Artist)
+        )
 
+    track_table = pd.read_sql(sql=q.statement, con=engine)
 
+    display(track_table.style.format(thousands=","))
 
-
-
-
+    # ADD EXCEL SPREADSHEET CODE
+```
 
 
 
