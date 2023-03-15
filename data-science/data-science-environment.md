@@ -169,7 +169,7 @@ Now that you connected to the database, you will want to study its structure. Yo
 
 Create a new cell in the notebook and enter the following code:
 
-``` python
+```python
 from sqlalchemy import inspect
 
 inspector = inspect(engine)
@@ -179,7 +179,7 @@ print(inspector.get_table_names())
 
 Run the cell. You created a new objected named *inspector* that contains You should see the output displayed as a list containing the table names in the Chinook database.
 
-```python
+```
 ['Album', 'Artist', 'Customer', 'Employee', 'Genre', 'Invoice', 'InvoiceLine', 'MediaType', 'Playlist', 'PlaylistTrack', 'Track']
 ```
 
@@ -429,8 +429,6 @@ Create a new cell in your Jupyter Notebook and run the following code:
 ```python
 import pandas as pd
 
-session1 = Session(engine)
-
 albums = pd.read_sql_table(table_name='Album', con=engine)
 
 print(albums)
@@ -586,21 +584,83 @@ Since we are using a Jupyter Notebook, we can use the [Pandas dataframe *style()
 
 Now you have a tables showing 3,503 tracks with information about the album, artists, composer, and length of each track.
 
-Now that you are done with this section, close the session you created earlier:
+## Generating SQL statements in SQLAlchemy
+
+The pandas *read_sql_table* method reads all the rows from the requested table from the SQL database and stores them in a pandas dataframe.
+
+Sometimes, however, you may want more control over exactly how much data you pull into your program. If you want to get specific information from the database, you can create SQLAlchemy ORM statements and use the pandas *read_sql* method to read groups of rows, single rows, or filtered rows from the database.
+
+for example, the following code uses the SQLAlchemy select function to build an SQL query that selects all rows in the Album table. This program gets the same data as a previous program where we used the *read_sql_table* method:
 
 ```python
-session1.close()
+statement = (select(Artist))
+
+dataframe = pd.read_sql(sql=statement, con=engine)
+
+print(dataframe.shape)
+print(dataframe.head(5))
+```
+```
+(275, 2)
+   ArtistId               Name
+0         1              AC/DC
+1         2             Accept
+2         3          Aerosmith
+3         4  Alanis Morissette
+4         5    Alice In Chains
 ```
 
-## Querying joined tables in SQLAlchemy
+You can see it read in all 275 rows in the table.
+
+As another example, let's say we only wanted to analyze data from the band, "Alice in Chains". Instead of gathering all 275 rows into a dataframe and then using the *pandas.where()* method to filter output by band name, we can run change the statement so it filters the data before it is passed into the pandas dataframe.
+
+```python
+statement = (select(Artist).filter(Artist.Name=='Alice In Chains'))
+
+dataframe = pd.read_sql(sql=statement, con=engine)
+
+print(dataframe.shape)
+print(dataframe.head(5))
+```
+```
+(1, 2)
+   ArtistId             Name
+0         5  Alice In Chains
+```
+
+This returned only one row. So, you can imagine how important it can be to filter data before it is loaded into a pandas dataframe, if you have data sets that are very large.
+
+One entry is not very interesting. What if you wanted to analyze data from a random sample of five artists, and you wanted to filter the data before loading it into a pandas dataframe? You could change the statement to the following:
+
+```python
+statement = (select(Artist).order_by(func.random()).limit(5))
+
+dataframe = pd.read_sql(sql=statement, con=engine)
+
+print(dataframe.shape)
+print(dataframe.head(5))
+```
+```
+(5, 2)
+   ArtistId                Name
+0       247  The King's Singers
+1       191         Nação Zumbi
+2       251            Fretwork
+3        36             O Rappa
+4        94        Jimi Hendrix
+```
+
+But, we need more data to analyze. We can join data from multiple tables using SQLAlchemy's select function. This accomplishes the same thing as the *pd.merge* method but it is more efficient do do this from the database.
+
+## Linking joined tables in SQLAlchemy
 
 Another way to create the dataframe containing album and track information from the Chinook database is to perform the table joins in the SQLAlchemy ORM query so that Pandas receives the final dataframe in one step. This may be desirable because it simplifies your Pandas operations. 
 
-Demonstrate how tables are linked with relationships in ORM. But we don't use this in our analysis but its good to know...
+In a properly-designed database, the relationships between tables are already defined using foreign keys and association tables. SQLAlchemy objects can use these relationships to connect data in different tables together.
+
+To view how tables are linked with relationships in ORM you can use the *inspect* function to look at relationship properties. Here, for example, are the relationships from the point of view of the Album table:
 
 ```python
-session1 = Session(engine)
-
 print(f"Album table relationships")
 print()
 for relationship in inspect(Album).relationships:
@@ -621,65 +681,11 @@ Direction:    symbol('ONETOMANY')
 Joined Table: Track
 ```
 
-Knowing those relationships, we can directly access data from joined tables after querying the first table. For example, here we get the first record from the Album table, then access data in the the joined Artist and Track tables using the established relationships.
-
-
-
-
-
-
-
-
-
-
-<!-- UPDATE THE DOC TO USE EXECUTE INSTEAD OF QUERY. EXECUTE IS THE MODERN WAY AND QUERY IS LEGACY
-
-https://www.reddit.com/r/learnpython/comments/r1v776/sqlalchemy_difference_between_sessionexecute_and/
--->
-
-
-
-
-
-
-
-
-
+Knowing those relationships, we can join all the data from multiple tables together using the *select()* functions' *join()* method. Here we select data from the Album, Track, and Artist tables by joining the Track and Artist tables with the Album table.
 
 ```python
-first_album = session1.query(Album).first()
-
-print(f"Album:  {first_album.Title}")
-print(f"Artist: {first_album.artist.Name}")
-print(f"Tracks:")
-for t in first_album.track_collection:
-    print(f"    {t.Name}")
-
-session1.close()
-```
-```
-Album:  For Those About To Rock We Salute You
-Artist: AC/DC
-Tracks:
-    For Those About To Rock (We Salute You)
-    Put The Finger On You
-    Let's Get It Up
-    Inject The Venom
-    Snowballed
-    Evil Walks
-    C.O.D.
-    Breaking The Rules
-    Night Of The Long Knives
-    Spellbound
-```
-
-First attempt at query with join
-
-```python
-session1 = Session(engine)
-
 print(f"Get inner join of tables Album, Track, and Artist")
-q = (session1.query(Album, Track, Artist)
+statement = (select(Album, Track, Artist)
      .join(Track)
      .join(Artist)
     )
@@ -688,37 +694,31 @@ df4 = pd.read_sql(sql=q.statement, con=engine)
 
 print(df4.shape)
 display(df4.head())
-
-session1.close()
 ```
 
-Result
+Run the cell to display the pandas data. It will look like the screenshot, below:
 
 ![](./Images/pandas008.png)
 
 
-See unneeded columns, and column names assigned by SQLAlchemy query result. Pick specific table columns and [rename them](https://devsheet.com/code-snippet/column-name-as-alias-name-sqlalchemy/) in the query statement.
+You can see the columns, and the column names assigned by SQLAlchemy the query result. Pick specific table columns. To get only the specific columns you need, select each column by name, starting with the Album.Title column. Then, [rename the columns](https://devsheet.com/code-snippet/column-name-as-alias-name-sqlalchemy/) in the select statement.
 
 ```python
-session1 = Session(engine)
-
 print(f"Get inner join of tables Album, Track, and Artist")
-q = (session1
-     .query(Album.Title.label("Album"),
+
+statement = (select(Album.Title.label("Album"),
             Artist.Name.label("Artist"),
             Track.Name.label("Track"),
             Track.Composer, 
-            Track.Milliseconds.label("Length(ms)"))
+            Track.Milliseconds.label("Length"))
      .join(Track)
      .join(Artist)
     )
 
-df4 = pd.read_sql(sql=q.statement, con=engine)
+dataframe = pd.read_sql(sql=statement, con=engine)
 
-print(df4.shape)
-display(df4.head().style.format(thousands=","))
-
-session1.close()
+print(dataframe.shape)
+display(dataframe.head().style.format(thousands=","))
 ```
 
 Result
@@ -726,7 +726,277 @@ Result
 ![](./Images/pandas010.png)
 
 
-You see that joining tables and selecting specific columns in an SQLAlchemy query can give you the data you need in one step.
+You see that joining tables and selecting specific columns in an SQLAlchemy query can give you the data you need in one step. Reading that data into a Pandas dataframe makes it easy to display the results.
+
+You can create very large datasets by joining many tables together. For example: if you want to know the names of all the tracks purchased by each customer:
+
+```python
+statement = (select(Customer.FirstName,
+                    Customer.LastName,
+                    Customer.Country,
+                    Track.Name.label("Track"),
+                    Album.Title.label("Album"),
+                    Artist.Name.label("Artist"),
+                    InvoiceLine.Quantity,
+                    InvoiceLine.UnitPrice
+                    )
+                .join_from(InvoiceLine, Invoice)
+                .join_from(Invoice, Customer)
+                .join_from(InvoiceLine, Track)
+                .join_from(Track, Album)
+                .join_from(Album, Artist))
+
+dataframe = pd.read_sql(sql=statement, con=engine)
+
+print(dataframe.shape)
+display(dataframe.head(5).style.format(thousands=","))
+```
+
+![](./Images/pandas015.png)
+
+
+I used the *join_from()* method to make the left and right sides of each join clearer to the program. normally it can infer the correct relationships but sometimes you need to be more specific.
+
+
+
+
+
+And (to use the association table), if you want to see all the tracks on all the playlists:
+
+```python
+statement = (select(Playlist.Name.label("Playlist"),
+                    Track.Name.label("Track"),
+                    Album.Title.label("Album"),
+                    Artist.Name.label("Artist")
+                    )
+                .join_from(Playlist, playlisttrack)
+                .join_from(playlisttrack, Track)
+                .join_from(Track, Album)
+                .join_from(Album, Artist))
+
+dataframe = pd.read_sql(sql=statement, con=engine)
+
+print(dataframe.shape)
+display(dataframe.head(5))
+```
+
+![](./Images/pandas016.png)
+
+It may take longer to process so many relations. Joining these tables took almost thirty seconds on my laptop. The result was a dataframe with 4 columns and 8,715 rows.
+
+If you want to just sample your data to learn about it, add the *limit()* method to the statement and, to get a random selection, change the pandas read_sql statement to:
+
+```
+dataframe = pd.read_sql(sql=statement.order_by(func.random()).limit(4), con=engine)
+```
+
+
+
+
+## More SQLAlchemy query information
+
+Up until this point, we have been using Pandas to query the SQL database, using an SQLAlchemy ORM select statement that tells Pandas which data to pull from the database. This works well when you want to gather large data sets into Pandas for organization and analysis.
+
+
+But first it helps to understand the objects returned by the SQLAlchemy session methods and how to get data from them. There may be times when you want to read data from an SQL database without loading it into a Pandas dataframe.
+
+For example, using the SQLAlchemy *select* statement from earlier as the parameter to the *session.execute* method, get a Result object from the database:
+
+```python
+with Session(engine) as session:
+    print(type(session.execute(statement)))
+    print(session.execute(statement))
+```
+```
+<class 'sqlalchemy.engine.result.ChunkedIteratorResult'>
+<sqlalchemy.engine.result.ChunkedIteratorResult object at 0x00000173831B5550>
+```
+
+The Result object gives you access to all the rows returned by the select statement but it does not let you just print all the rows at once. You need to iterate through the result. Each iteration will give you a Row object from the Result object.
+
+The Result object is connected to teh database session. It does not actually contain data but it sends you data from the database every time you iterate on it.
+
+To get rows from the database, use an iterator like a *for* loop or the *next* function. Each iteration returns a *Row* object
+
+```python
+with Session(engine) as session:
+    result = session.execute(statement)
+    print(next(result))
+    print(next(result))
+    print(type(result))
+```
+```
+('For Those About To Rock We Salute You', 'AC/DC', 'For Those About To Rock (We Salute You)', 'Angus Young, Malcolm Young, Brian Johnson', 343719)
+('Balls to the Wall', 'Accept', 'Balls to the Wall', None, 342562)
+<class 'sqlalchemy.engine.result.ChunkedIteratorResult'>
+```
+
+Here is an example of iterating through the result using a *for* loop. In this case, I added some code to limit the output to four rows.
+
+```python
+with Session(engine) as session:
+    limit = 4
+    result = session.execute(statement)
+    for index, item in enumerate(result, start=1):
+        print(item)
+        if index == limit:
+            break
+```
+```
+('For Those About To Rock We Salute You', 'AC/DC', 'For Those About To Rock (We Salute You)', 'Angus Young, Malcolm Young, Brian Johnson', 343719)
+('Balls to the Wall', 'Accept', 'Balls to the Wall', None, 342562)
+('Restless and Wild', 'Accept', 'Fast As a Shark', 'F. Baltes, S. Kaufman, U. Dirkscneider & W. Hoffman', 230619)
+('Restless and Wild', 'Accept', 'Restless and Wild', 'F. Baltes, R.A. Smith-Diesel, S. Kaufman, U. Dirkscneider & W. Hoffman', 252051)
+```
+
+When you print a *Row* object, it displays a tuple containing values from each column in that row. But, it is still a Row object so you can get data from any column in the row by addressing it by column name, as follows:
+
+```python
+with Session(engine) as session:
+    result = session.execute(statement)
+    x = next(result).Artist
+    print(x)
+    print(type(x))
+```
+```
+AC/DC
+<class 'str'>
+```
+
+If you don't want to use Pandas to display a table with column headers, you can get the column headers from the database and use them to identify columns in your program. The *keys()* method returns a list of headers, as shown below:
+
+```
+table = []
+limit = 4
+with Session(engine) as session:
+    result = session.execute(statement)
+    for index, item in enumerate(result, start=1):
+        table.append(item)
+        if index == limit:
+            break
+    headers = session.execute(statement).keys()
+    print(headers)
+    print(table)
+```
+
+Another way to get a number of rows from a table is to use the session's *fetchmany()* method, as shown below:
+
+```python
+with Session(engine) as session:
+    headers = session.execute(statement).keys()
+    table = session.execute(statement).fetchmany(4)
+
+print(tuple(headers))
+for row in table:
+    print(row)
+```
+```
+('Album', 'Artist', 'Track', 'Composer', 'Length')
+('For Those About To Rock We Salute You', 'AC/DC', 'For Those About To Rock (We Salute You)', 'Angus Young, Malcolm Young, Brian Johnson', 343719)
+('Balls to the Wall', 'Accept', 'Balls to the Wall', None, 342562)
+('Restless and Wild', 'Accept', 'Fast As a Shark', 'F. Baltes, S. Kaufman, U. Dirkscneider & W. Hoffman', 230619)
+('Restless and Wild', 'Accept', 'Restless and Wild', 'F. Baltes, R.A. Smith-Diesel, S. Kaufman, U. Dirkscneider & W. Hoffman', 252051)
+```
+
+To explore what types are returned by the *session.execute.keys()*, *session.execute.fetchmany()* methods, run the following code:
+
+```python
+with Session(engine) as session:
+    headers = session.execute(statement).keys()
+    table = session.execute(statement).fetchmany(4)
+
+print(type(headers))
+print(type(table))
+for row in table:
+    print(type(row))
+```
+
+We see the following output:
+
+```
+<class 'sqlalchemy.engine.result.RMKeyView'>
+<class 'list'>
+<class 'sqlalchemy.engine.row.Row'>
+<class 'sqlalchemy.engine.row.Row'>
+<class 'sqlalchemy.engine.row.Row'>
+<class 'sqlalchemy.engine.row.Row'>
+```
+
+From this output, we see
+
+* The *keys()* method returns a RMKeyView object, which can be converted to an interable, list, or tuple using the Python *iter()*, *list()*, or *tuple()* functions.
+* The *fetchmany()* method returns a list that contains Row objects, which are similar to Named Tuples. But, when printed, they look like normal Tuples.
+
+
+## More session methods
+
+The SQLAlchemy session object offers many [several methods for querying](https://docs.sqlalchemy.org/en/20/orm/session_basics.html#querying) rows or items from a database. You can use the *execute()* method to get a result containing database rows, the *scalars()* method to get results containing single items from each row, or the *scalar()* method to get the actual value of a single item in a single row.
+
+Below is an example of using the various methods, and chaining additional methods onto either the original statement object or onto the session object.
+
+```python
+with Session(engine) as session:
+    print()
+    print(session.execute(statement).first())
+    print()
+    print(session.execute(statement).fetchmany(2))
+    print()
+    print(session.execute(statement.limit(2)).fetchall())
+    print()
+    print(session.scalars(statement))
+    print()
+    print(session.scalars(statement).first())
+    print()
+    print(session.scalars(statement).fetchmany(2))
+    print()
+    print(session.scalars(statement.limit(2)).fetchall())
+    print()
+    print(session.scalar(statement))
+```
+```
+<sqlalchemy.engine.result.ChunkedIteratorResult object at 0x00000173859DBED0>
+
+('For Those About To Rock We Salute You', 'AC/DC', 'For Those About To Rock (We Salute You)', 'Angus Young, Malcolm Young, Brian Johnson', 343719)
+
+[('For Those About To Rock We Salute You', 'AC/DC', 'For Those About To Rock (We Salute You)', 'Angus Young, Malcolm Young, Brian Johnson', 343719), ('Balls to the Wall', 'Accept', 'Balls to the Wall', None, 342562)]
+
+[('For Those About To Rock We Salute You', 'AC/DC', 'For Those About To Rock (We Salute You)', 'Angus Young, Malcolm Young, Brian Johnson', 343719), ('Balls to the Wall', 'Accept', 'Balls to the Wall', None, 342562)]
+
+<sqlalchemy.engine.result.ScalarResult object at 0x00000173859D1750>
+
+For Those About To Rock We Salute You
+
+['For Those About To Rock We Salute You', 'Balls to the Wall']
+
+['For Those About To Rock We Salute You', 'Balls to the Wall']
+
+For Those About To Rock We Salute You
+```
+
+More...
+
+```python
+with Session(engine) as session:
+    query = session.execute(statement.filter(Artist.Name == 'Alice In Chains'))
+    headings = query.keys()
+    result = query.fetchmany(4)
+    
+print(result)
+
+print()
+for row in result:
+    print(f"Track name: {row.Track}\tComposer: {row.Composer}")
+```
+```
+[('Facelift', 'Alice In Chains', 'We Die Young', 'Jerry Cantrell', 152084), ('Facelift', 'Alice In Chains', 'Man In The Box', 'Jerry Cantrell, Layne Staley', 286641), ('Facelift', 'Alice In Chains', 'Sea Of Sorrow', 'Jerry Cantrell', 349831), ('Facelift', 'Alice In Chains', 'Bleed The Freak', 'Jerry Cantrell', 241946)]
+
+Track name: We Die Young	Composer: Jerry Cantrell
+Track name: Man In The Box	Composer: Jerry Cantrell, Layne Staley
+Track name: Sea Of Sorrow	Composer: Jerry Cantrell
+Track name: Bleed The Freak	Composer: Jerry Cantrell
+```
+
+
 
 # Pandas or SQL?
 
@@ -743,13 +1013,9 @@ Use SQLAlchemy ORM to create a joined table containing the data we need for anal
 For example, Load data from the database into a dataframe named *df4* that contains track information, including prices. 
 
 ```python
-session1 = Session(engine)
-
 albums = pd.read_sql_table(table_name='Album', con=engine)
 artists = pd.read_sql_table(table_name='Artist', con=engine)
 tracks = pd.read_sql_table(table_name='Track', con=engine)
-
-session1.close()
 
 df1 = (pd
      .merge(albums, artists)
@@ -810,7 +1076,7 @@ print(tabulate(
         tablefmt='grid', 
         showindex=False))
 print()
-print(f"Number of tracks per artist:")
+print(f"Number of tracks artist, from a sample of artists:")
 print(tabulate(
         data
         .groupby('Artist')['Track']
@@ -821,7 +1087,7 @@ print(tabulate(
         tablefmt="grid"))
 print()
 print(f"Shortest track by Artist=Guns N' Roses: ")
-gnr = data.loc[df5['Artist'] == "Guns N' Roses"]
+gnr = data.loc[data['Artist'] == "Guns N' Roses"]
 gnr_shortest = gnr[['Track','Length']].nsmallest(3, 'Length')
 print(tabulate(
         gnr_shortest, 
@@ -856,7 +1122,7 @@ Longest tracks, with artist name:
 | Greetings from Earth, Pt. 1 |  2960293 | Battlestar Galactica (Classic) |
 +-----------------------------+----------+--------------------------------+
 
-Number of tracks per artist:
+Number of tracks per artist, from a sample of artists::
 +---------------+------------+
 | Artist        |   # Tracks |
 +===============+============+
@@ -868,15 +1134,15 @@ Number of tracks per artist:
 +---------------+------------+
 
 Shortest track by Artist=Guns N' Roses: 
-+----------------+----------+
-| Track          |   Length |
-+================+==========+
-| Atrás da Porta |   166608 |
-+----------------+----------+
-| Casa no Campo  |   170788 |
-+----------------+----------+
-| Fascinação     |   180793 |
-+----------------+----------+
++---------------------+----------+
+| Track               |   Length |
++=====================+==========+
+| My World            |    84532 |
++---------------------+----------+
+| Perfect Crime       |   143637 |
++---------------------+----------+
+| You Ain't the First |   156268 |
++---------------------+----------+
 ```
 
 As you can see, above, we read the data from three SQL database tables into Pandas dataframes and then we closed the connection to the database session. After that, we merged the dataframes and performed all data selction and calculations using Pandas.
@@ -889,22 +1155,18 @@ To display the length of the longest track:
 
 ### Longest track
 
-To find the longest track, I queried the Milliseconds column in the Track table, sorted its contents in descending order, and returned the first result.
+To find the longest track as a single result from an SQL query, use session's [*scalar()* method](https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.scalars), which returns the value in the first row instead of a tuple containing all the items in the first row.
+
 
 ```python
-session1 = Session(engine)
-    
-q = (session1
-        .query(func.max(Track.Milliseconds))
-    )
+from sqlalchemy import select, func
 
-length = q[0]
+with Session(engine) as session:
+    statement = select(func.max(Track.Milliseconds))
+    length = session.scalar(statement)
+
 print(f"Longest track length: {length}")
 ```
-
-The statement `length = q[0]` is actually doing a lotmore than it looks like. The object, *q* returned by the query uses [lazy loading](https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html#lazy-loading) so it does not contain any data until you assign it to another object or cause it to iterate at least once. When the object does load data, it returns row data in a tuple. Since you queried only one row from the column, the tuple contains only one value. You [get that value by indexing](https://docs.sqlalchemy.org/en/20/tutorial/data_select.html#selecting-orm-entities-and-columns) the tuple.
-
-I could also use the *iter()* function to cause the row object to return the tuple and then use the *next* functions to return the first item in the tuple. Then the statement would be `length = next(iter(q))`. 
 
 The output is:
 
@@ -912,11 +1174,9 @@ The output is:
 Longest track: 5286953
 ```
 
-Another way to get a single result from an SQL query is to use the session's [*scalar()* method](https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.scalars), which returns the the first column of the returned row instead of a tuple containing all the items in the row.
+
 
 ```python
-session1 = Session(engine)
-    
 length = (session1
             .query(func.max(Track.Milliseconds))
             .scalar()

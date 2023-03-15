@@ -139,3 +139,51 @@ https://m-soro.github.io/Business-Analytics/SQL-for-Data-Analysis/L4-Project-Que
 
 https://medium.com/analytics-vidhya/translating-sql-queries-to-sqlalchemy-orm-a8603085762b
 
+
+
+
+
+The statement `length = q[0]` is actually doing a lotmore than it looks like. The object, *q* returned by the query uses [lazy loading](https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html#lazy-loading) so it does not contain any data until you assign it to another object or cause it to iterate at least once. When the object does load data, it returns row data in a tuple. Since you queried only one row from the column, the tuple contains only one value. You [get that value by indexing](https://docs.sqlalchemy.org/en/20/tutorial/data_select.html#selecting-orm-entities-and-columns) the tuple.
+
+I could also use the *iter()* function to cause the row object to return the tuple and then use the *next* functions to return the first item in the tuple. Then the statement would be `length = next(iter(q))`. 
+
+
+
+
+
+
+
+
+Knowing those relationships, we can directly access data from joined tables after querying the first table. For example, here we get the first record from the Album table, then access data in the the joined Artist and Track tables using the established relationships.
+
+```python
+from sqlalchemy import select
+
+session = Session(engine)
+
+statement = select(Album)
+first_album = session.scalar(statement)
+
+print(f"Album:  {first_album.Title}")
+print(f"Artist: {first_album.artist.Name}")
+print(f"Tracks:")
+for t in first_album.track_collection:
+    print(f"    {t.Name}")
+
+session.close()
+```
+```
+Album:  For Those About To Rock We Salute You
+Artist: AC/DC
+Tracks:
+    For Those About To Rock (We Salute You)
+    Put The Finger On You
+    Let's Get It Up
+    Inject The Venom
+    Snowballed
+    Evil Walks
+    C.O.D.
+    Breaking The Rules
+    Night Of The Long Knives
+    Spellbound
+```
