@@ -615,7 +615,7 @@ You can see it read in all 275 rows in the table.
 As another example, let's say we only wanted to analyze data from the band, "Alice in Chains". Instead of gathering all 275 rows into a dataframe and then using the *pandas.where()* method to filter output by band name, we can run change the statement so it filters the data before it is passed into the pandas dataframe.
 
 ```python
-statement = (select(Artist).filter(Artist.Name=='Alice In Chains'))
+statement = (select(Artist).where(Artist.Name=='Alice In Chains'))
 
 dataframe = pd.read_sql(sql=statement, con=engine)
 
@@ -784,23 +784,15 @@ display(dataframe.head(5))
 
 It may take longer to process so many relations. Joining these tables took almost thirty seconds on my laptop. The result was a dataframe with 4 columns and 8,715 rows.
 
-If you want to just sample your data to learn about it, add the *limit()* method to the statement and, to get a random selection, change the pandas read_sql statement to:
-
-```
-dataframe = pd.read_sql(sql=statement.order_by(func.random()).limit(4), con=engine)
-```
-
-
 
 
 ## More SQLAlchemy query information
 
 Up until this point, we have been using Pandas to query the SQL database, using an SQLAlchemy ORM select statement that tells Pandas which data to pull from the database. This works well when you want to gather large data sets into Pandas for organization and analysis.
 
+There may be times when you want to read data from an SQL database and receive the result directly, without loading it into a Pandas dataframe. You do this using the SQLAlchemy's session. 
 
-But first it helps to understand the objects returned by the SQLAlchemy session methods and how to get data from them. There may be times when you want to read data from an SQL database without loading it into a Pandas dataframe.
-
-For example, using the SQLAlchemy *select* statement from earlier as the parameter to the *session.execute* method, get a Result object from the database:
+For example, using the SQLAlchemy *select* statement you created earlier as the parameter to the *session.execute* method, get a Result object from the database:
 
 ```python
 with Session(engine) as session:
@@ -812,9 +804,9 @@ with Session(engine) as session:
 <sqlalchemy.engine.result.ChunkedIteratorResult object at 0x00000173831B5550>
 ```
 
-The Result object gives you access to all the rows returned by the select statement but it does not let you just print all the rows at once. You need to iterate through the result. Each iteration will give you a Row object from the Result object.
+But, first, it helps to understand the objects returned by the SQLAlchemy session methods and how to get data from them. 
 
-The Result object is connected to teh database session. It does not actually contain data but it sends you data from the database every time you iterate on it.
+The Result object is connected to the database session and gives you access to all the rows returned by the execution of the select statement  It does not actually contain data but it sends you data from the database every time you iterate on it. You need to iterate through the result to get rows from the database.
 
 To get rows from the database, use an iterator like a *for* loop or the *next* function. Each iteration returns a *Row* object
 
@@ -934,69 +926,116 @@ The SQLAlchemy session object offers many [several methods for querying](https:/
 
 Below is an example of using the various methods, and chaining additional methods onto either the original statement object or onto the session object.
 
-```python
-with Session(engine) as session:
-    print()
-    print(session.execute(statement).first())
-    print()
-    print(session.execute(statement).fetchmany(2))
-    print()
-    print(session.execute(statement.limit(2)).fetchall())
-    print()
-    print(session.scalars(statement))
-    print()
-    print(session.scalars(statement).first())
-    print()
-    print(session.scalars(statement).fetchmany(2))
-    print()
-    print(session.scalars(statement.limit(2)).fetchall())
-    print()
-    print(session.scalar(statement))
-```
-```
-<sqlalchemy.engine.result.ChunkedIteratorResult object at 0x00000173859DBED0>
+The *session.execute()* method returns a SQLAlchemy ORM Result object.
 
+```python
+session = Session(engine)
+print(session.execute(statement))
+```
+```
+<sqlalchemy.engine.result.ChunkedIteratorResult object at 0x0000016E8881BBD0>
+```
+
+The *session.execute()* method's *first()* method returns the first row in the Result object.
+
+```python
+print(session.execute(statement).first())
+```
+```
 ('For Those About To Rock We Salute You', 'AC/DC', 'For Those About To Rock (We Salute You)', 'Angus Young, Malcolm Young, Brian Johnson', 343719)
+```
 
+The *fetchmany()* method returns the specified number rows and returns them in a list of Row objects.
+
+```python
+print(session.execute(statement).fetchmany(2))
+```
+```
 [('For Those About To Rock We Salute You', 'AC/DC', 'For Those About To Rock (We Salute You)', 'Angus Young, Malcolm Young, Brian Johnson', 343719), ('Balls to the Wall', 'Accept', 'Balls to the Wall', None, 342562)]
+```
 
+The *fetchall()* method gets all rows in the Result object and returns them in a list of Row objects. In this case, adding the *limit()* method to the statement causes the Result object to have only two rows in it.
+
+```python
+print(session.execute(statement.limit(2)).fetchall())
+```
+```
 [('For Those About To Rock We Salute You', 'AC/DC', 'For Those About To Rock (We Salute You)', 'Angus Young, Malcolm Young, Brian Johnson', 343719), ('Balls to the Wall', 'Accept', 'Balls to the Wall', None, 342562)]
+```
 
-<sqlalchemy.engine.result.ScalarResult object at 0x00000173859D1750>
+The *session.scalars()* method returns a SQLAlchemy ORM Scalars object, which, when iterated, looks like a list containing a series of values that come from the first column of each row in results returned by executing the SQL statement.
 
-For Those About To Rock We Salute You
+```python
+print(session.scalars(statement))
+```
+```
+<sqlalchemy.engine.result.ScalarResult object at 0x0000016E8886F0D0>
+```
 
-['For Those About To Rock We Salute You', 'Balls to the Wall']
+The *session.scalars()* method's *first()* method returns the first value from the series.
 
-['For Those About To Rock We Salute You', 'Balls to the Wall']
-
+```python
+print(session.scalars(statement).first())
+```
+```
 For Those About To Rock We Salute You
 ```
 
-More...
+The *fetchmany()* method returns the specified number of items and returns them in a list of values.
 
 ```python
-with Session(engine) as session:
-    query = session.execute(statement.filter(Artist.Name == 'Alice In Chains'))
-    headings = query.keys()
-    result = query.fetchmany(4)
-    
-print(result)
+print(session.scalars(statement).fetchmany(2))
+```
+```
+['For Those About To Rock We Salute You', 'Balls to the Wall']
+```
 
+The *session.scalar()* method returns one value from the SQL statement's results. It returns the value in the first column of the first row.
+
+```python
+print(session.scalar(statement))
+session.close()
+```
+```
+For Those About To Rock We Salute You
+```
+
+## Selecting rows
+
+You can create an SQL statement that search for rows that match a specified criteria. For example, here is a script that returns the first four records the artist named "Alice in Chains" and prints the track names and composer of each track.
+
+```python
+statement = (select(Album.Title.label("Album"),
+            Artist.Name.label("Artist"),
+            Track.Name.label("Track"),
+            Track.Composer, 
+            Track.Milliseconds.label("Length"))
+     .join(Track)
+     .join(Artist)
+     .where(Artist.Name == 'Alice In Chains')
+    )
+
+with Session(engine) as session:
+    result = session.execute(statement).fetchall()
+    
 print()
 for row in result:
-    print(f"Track name: {row.Track}\tComposer: {row.Composer}")
+    print(f"Track name: {row.Track:18} Composer: {row.Composer}")
 ```
 ```
-[('Facelift', 'Alice In Chains', 'We Die Young', 'Jerry Cantrell', 152084), ('Facelift', 'Alice In Chains', 'Man In The Box', 'Jerry Cantrell, Layne Staley', 286641), ('Facelift', 'Alice In Chains', 'Sea Of Sorrow', 'Jerry Cantrell', 349831), ('Facelift', 'Alice In Chains', 'Bleed The Freak', 'Jerry Cantrell', 241946)]
-
-Track name: We Die Young	Composer: Jerry Cantrell
-Track name: Man In The Box	Composer: Jerry Cantrell, Layne Staley
-Track name: Sea Of Sorrow	Composer: Jerry Cantrell
-Track name: Bleed The Freak	Composer: Jerry Cantrell
+Track name: We Die Young       Composer: Jerry Cantrell
+Track name: Man In The Box     Composer: Jerry Cantrell, Layne Staley
+Track name: Sea Of Sorrow      Composer: Jerry Cantrell
+Track name: Bleed The Freak    Composer: Jerry Cantrell
+Track name: I Can't Remember   Composer: Jerry Cantrell, Layne Staley
+Track name: Love, Hate, Love   Composer: Jerry Cantrell, Layne Staley
+Track name: It Ain't Like That Composer: Jerry Cantrell, Michael Starr, Sean Kinney
+Track name: Sunshine           Composer: Jerry Cantrell
+Track name: Put You Down       Composer: Jerry Cantrell
+Track name: Confusion          Composer: Jerry Cantrell, Michael Starr, Layne Staley
+Track name: I Know Somethin (Bout You) Composer: Jerry Cantrell
+Track name: Real Thing         Composer: Jerry Cantrell, Layne Staley
 ```
-
-
 
 # Pandas or SQL?
 
@@ -1004,10 +1043,11 @@ Data selection, filtering, and manipulation can be done on either the SQL databa
 
 In the end, your decision about whether you join and manipulate your data in Pandas or in the SQLAlchemy query will depend on issues like the purpose of your application, the size of the database tables and pandas dataframes, database server performance, and the processing and memory resources available on your workstation.
 
-In my opinion, if your data comes from a database, you should do most of your data joining and filtering using the database and then use Pandas for additional data cleaning and analysis. If your data comes from spreadsheets file or CSV files, you have to use Pandas to combine, filter, clean, and analyze data.
+In my opinion, if your data comes from a database, you should do most of your data joining and filtering using the database and then use Pandas for additional data cleaning and analysis. If your data comes from spreadsheets or CSV files, you have to use Pandas to combine, filter, clean, and analyze data.
 
 ## Data analysis using Pandas
 
+<!--fix-->
 Use SQLAlchemy ORM to create a joined table containing the data we need for analysis and load that data into a dataframe. 
 
 For example, Load data from the database into a dataframe named *df4* that contains track information, including prices. 
@@ -1027,183 +1067,182 @@ data = (pd
                         'Title':'Album',
                         'Milliseconds':'Length'}))
 
-print(f"Longest track: {data.Length.max()}")
-print(f"Shortest track: {data.Length.min()}")
+print(f"Longest track: {data.Length.max():d}")
+print(f"Shortest track: {data.Length.min():,}")
 print(f"How many blanks in Composer column?: "
-      f"{data.Composer.isnull().sum()}")
-print(f"Track length mean: {data.Length.mean()}")
-print(f"Track length median: {data.Length.median()}")
+      f"{data.Composer.isnull().sum():,}")
+print(f"Track length mean: {data.Length.mean():,.2f}")
+print(f"Track length median: {data.Length.median():,.2f}")
 print(f"Artist mode: {data.Artist.mode()[0]}")
 print(f"Correlation between Length and UnitPrice: "
-      f"{data['Length'].corr(data['UnitPrice'])}")
+      f"{data['Length'].corr(data['UnitPrice']):,.2f}")
 print(f"Track length standard deviation: "
-      f"{data.Length.std()}")
+      f"{data.Length.std():,.2f}")
 ```
 
 Which outputs the following:
 
 ```
 Longest track: 5286953
-Shortest track: 1071
+Shortest track: 1,071
 How many blanks in Composer column?: 978
-Track length mean: 393599.2121039109
-Track length median: 255634.0
+Track length mean: 393,599.21
+Track length median: 255,634.00
 Artist mode: Iron Maiden
-Correlation between Length and UnitPrice: 0.9317964749112717
-Track length standard deviation: 535005.4352066235
+Correlation between Length and UnitPrice: 0.93
+Track length standard deviation: 535,005.44
 ```
 
-Group and select data:
+You can also use the Pandas *describe* function to get statistical information about any column in a dataframe. For example, to get statistics about the length of all tracks in the dataframe:
 
 ```python
-from tabulate import tabulate
+print(data.Length.describe())
+```
+```
+count    3.503000e+03
+mean     3.935992e+05
+std      5.350054e+05
+min      1.071000e+03
+25%      2.072810e+05
+50%      2.556340e+05
+75%      3.216450e+05
+max      5.286953e+06
+Name: Length, dtype: float64
+```
 
+Or, to get statistics about the artist names in the dataframe:
+
+```python
+print(data.Artist.describe())
+```
+```
+count            3503
+unique            204
+top       Iron Maiden
+freq              213
+Name: Artist, dtype: object
+```
+
+You can see that th type of information you get depends on the data type of the column.
+
+Group and select data. You can use Pandas to [group and aggregate data](https://realpython.com/pandas-groupby/).
+
+For example, the following code groups the dataframe by Artist and calculates the standard deviation of all the track lengths created by each artist. 
+
+```python
 print(f"Track length standard deviation for a sample of artists:")
-print(tabulate(
-        data.groupby(['Artist'])['Length']
-        .std()
-        .dropna()
-        .sample(3)
-        .to_frame(), 
-        headers = ['Artist','Track Length\nStd Dev'], 
-        tablefmt="grid"))
-print()
+pd.options.display.float_format = '{:,.2f}'.format
+pd.options.styler.format.thousands= ','
+
+display(
+    data
+    .groupby(['Artist'])['Length'] 
+    .std()
+    .dropna()
+    .sample(3)
+    .to_frame()
+)
+```
+
+The following code displays the three longest tracks in the dataframe:
+
+![](./Images/pandas020.png)
+
+```python
 print(f"Longest tracks, with artist name:")
-print(tabulate(
-        data[['Track','Length','Artist']]
-        .nlargest(3, 'Length'), 
-        headers="keys", 
-        tablefmt='grid', 
-        showindex=False))
-print()
-print(f"Number of tracks artist, from a sample of artists:")
-print(tabulate(
-        data
-        .groupby('Artist')['Track']
-        .count()
-        .sample(3)
-        .to_frame(), 
-        headers = ['Artist','# Tracks'], 
-        tablefmt="grid"))
-print()
-print(f"Shortest track by Artist=Guns N' Roses: ")
-gnr = data.loc[data['Artist'] == "Guns N' Roses"]
+display(
+    data[['Track','Length','Artist']]
+    .nlargest(3, 'Length')
+    .style.hide(axis="index")
+)
+```
+
+![](./Images/pandas021.png)
+
+The following code counts the number of tracks created by each artist artist, from a random sample of artists:
+
+```python
+print(f"Number of tracks per artist, from a sample of artists::")
+display(
+    data
+    .groupby('Artist')['Track']
+    .count()
+    .sample(3)
+    .to_frame()
+)
+```
+
+![](./Images/pandas022.png)
+
+The following code lists the shortest tracks by the artist named "Guns N' Roses":
+
+```python
+print(f"Shortest tracks by Artist=Guns N' Roses: ")
+gnr = data.loc[data.Artist == "Guns N' Roses"]
 gnr_shortest = gnr[['Track','Length']].nsmallest(3, 'Length')
-print(tabulate(
-        gnr_shortest, 
-        headers="keys", 
-        tablefmt='grid', 
-        showindex=False))       
+display(
+    gnr_shortest
+    .style.hide(axis="index")
+)   
 ```
 
-Which outputs the following:
+![](./Images/pandas023.png)
 
-```
-Track length standard deviation for a sample of artists:
-+--------------------+----------------+
-| Artist             |   Track Length |
-|                    |        Std Dev |
-+====================+================+
-| Vinícius De Moraes |        87110.6 |
-+--------------------+----------------+
-| Gene Krupa         |        46111.3 |
-+--------------------+----------------+
-| Marcos Valle       |        44225.8 |
-+--------------------+----------------+
-
-Longest tracks, with artist name:
-+-----------------------------+----------+--------------------------------+
-| Track                       |   Length | Artist                         |
-+=============================+==========+================================+
-| Occupation / Precipice      |  5286953 | Battlestar Galactica           |
-+-----------------------------+----------+--------------------------------+
-| Through a Looking Glass     |  5088838 | Lost                           |
-+-----------------------------+----------+--------------------------------+
-| Greetings from Earth, Pt. 1 |  2960293 | Battlestar Galactica (Classic) |
-+-----------------------------+----------+--------------------------------+
-
-Number of tracks per artist, from a sample of artists::
-+---------------+------------+
-| Artist        |   # Tracks |
-+===============+============+
-| Planet Hemp   |         16 |
-+---------------+------------+
-| Guns N' Roses |         42 |
-+---------------+------------+
-| Deep Purple   |         92 |
-+---------------+------------+
-
-Shortest track by Artist=Guns N' Roses: 
-+---------------------+----------+
-| Track               |   Length |
-+=====================+==========+
-| My World            |    84532 |
-+---------------------+----------+
-| Perfect Crime       |   143637 |
-+---------------------+----------+
-| You Ain't the First |   156268 |
-+---------------------+----------+
-```
-
-As you can see, above, we read the data from three SQL database tables into Pandas dataframes and then we closed the connection to the database session. After that, we merged the dataframes and performed all data selction and calculations using Pandas.
 
 ## Data analysis using SQLAlchemy queries
 
-The following SQLAlchemy queries will display similar results to the Pandas dataframe work we did previously. 
+You may also analyze data using SQLAlchemy queries and functions. Many database engines support functions like maximum, minimum, and standard deviation. The functions supported may vary for each database engine.
 
-To display the length of the longest track:
+If you are writing an application that needs direct access to data from a database, you may want to see more examples of SQLAlchemy statements.
 
-### Longest track
+The following SQLAlchemy statements use [functions available in the SQLite database engine](https://www.techonthenet.com/sqlite/functions/index.php) and will display similar results to the Pandas dataframe work we did previously. 
 
-To find the longest track as a single result from an SQL query, use session's [*scalar()* method](https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.scalars), which returns the value in the first row instead of a tuple containing all the items in the first row.
-
+First, write code that maps the structure of the database:
 
 ```python
-from sqlalchemy import select, func
+from sqlalchemy import create_engine, select, func
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import Session
 
+engine = create_engine(r"sqlite:///C:/Users/blinklet/Documents/chinook-database/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite")
+
+Base = automap_base()
+Base.prepare(autoload_with=engine)
+
+Album = Base.classes.Album
+Artist = Base.classes.Artist
+Customer = Base.classes.Customer
+Employee = Base.classes.Employee
+Genre = Base.classes.Genre
+Invoice = Base.classes.Invoice
+InvoiceLine = Base.classes.InvoiceLine
+MediaType = Base.classes.MediaType
+Playlist = Base.classes.Playlist
+Track = Base.classes.Track
+playlisttrack = Base.metadata.tables['PlaylistTrack']
+```
+
+To find single results from an SQL query, use session's [*scalar()* method](https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.scalars), which returns the value of the first item in the first row, instead of a tuple containing all the items in the first row.
+
+```python
 with Session(engine) as session:
     statement = select(func.max(Track.Milliseconds))
     length = session.scalar(statement)
+    print(f"Longest track length: {length}")
 
-print(f"Longest track length: {length}")
+    statement = select(func.min(Track.Milliseconds))
+    length = session.scalar(statement)
+    print(f"Shortest track length: {length}")
+
+    statement = select(func.mean(Track.Milliseconds))
+    mean = session.scalar(statement)
+    print(f"Mean track length: {length}"))
 ```
 
-The output is:
-
-```
-Longest track: 5286953
-```
-
-
-
-```python
-length = (session1
-            .query(func.max(Track.Milliseconds))
-            .scalar()
-         )
-
-print(f"Longest track length: {length}")
-```
-### Shortest track
-
-
-```python
-length = (session1
-            .query(func.min(Track.Milliseconds))
-            .scalar()
-         )
-
-print(f"Shortest track length: {length}")
-```
-```
-Shortest track length: 1071
-```
-
+T
 other...
 
 ```python
-print(f"How many blanks in Composer column?: {df5.Length.isnull().sum()}")
-print(f"Track length mean: {df5.Length.mean()}")
 print(f"Track length median: {df5.Length.median()}")
 print(f"Artist mode: {df5.Artist.mode()[0]}")
 print(f"Correlation between Length and Length: {df5['Length'].corr(df5['Length'])}")
