@@ -1267,7 +1267,7 @@ You will want to use complex SQL queries when you need single values from the da
 
 ## Convert an ORM result into a Pandas dataframe
 
-You may wish to perform a query and get a result in the SQLAlchemy ORM and then convert the result into a Pandas dataframe. This allows you to separate your program's database logic from its business logic. So, instead of building a select statement and running it as part of the Pandas *read_sql* method, get the ORM result object from the SQLAlchemy session. Then use the [Pandas *Dataframe*](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html) class to convert the received data into a data frame. For example:
+You may wish to perform a query and get a result in the SQLAlchemy ORM and then convert the result into a Pandas dataframe. This allows you to separate your program's database logic from its business logic. So, instead of building a select statement and running it as part of the Pandas *read_sql* method, get the ORM result object from the SQLAlchemy session. Then use the [Pandas *Dataframe*](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html) class to convert the received data into a dataframe. For example:
 
 ```python
 statement = (
