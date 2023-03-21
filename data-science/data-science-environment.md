@@ -773,7 +773,7 @@ The result was a dataframe with 4 columns and 8,715 rows.
 
 ![](./Images/pandas016.png)
 
-# SQLAlchemy
+# SQLAlchemy query basics
 
 Up until this point, we have been using Pandas to query the SQL database, using an SQLAlchemy ORM select statement that tells Pandas which data to pull from the database. This works well when you want to gather large data sets into Pandas for organization and analysis.
 
@@ -1305,52 +1305,125 @@ The output should look like:
 
 # Visualizing data 
 
-It is easy to display data visualizations when working in a Jupyter notebook. 
+It is easy to display data visualizations when working in a Jupyter notebook. You create a dataframe containing the data you want to visualize and then use the [Pandas dataframe's *.plot()* method](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.plot.html). If you want more functionality or prefer a certain style of charts, you can use one of many specialized Python visualization packages like [MatPlotLib](https://matplotlib.org/), [Seaborn](https://seaborn.pydata.org/), or [Plotly](https://plotly.com/python/).
 
-
-# Full program to create Excel spreadsheet with playlist info
+We'll run a query that gets a lot of data from the database so we can perform analysis and visualization using Pandas. We'll get data that shows the purchase history of all the tracks in our inventory, including tracks that have not sold. This is a good example of using *outer joins* that include tracks that have not been sold, so do not have corresponding entries in the InvoiceLine table.
 
 ```python
-from sqlalchemy import create_engine, inspect, select
-from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import Session
-import pandas as pd
+statement = (
+    select(
+        Customer.CustomerId,
+        Customer.FirstName.label("Customer Firstname"),
+        Customer.LastName.label("Customer Lastname"),
+        Customer.Country,
+        Track.TrackId,
+        Track.Name.label("Track"),
+        Album.Title.label("Album"),
+        Artist.Name.label("Artist"),
+        Genre.Name.label("Genre"),
+        MediaType.Name.label("Media"),
+        InvoiceLine.Quantity,
+        InvoiceLine.UnitPrice,
+        Invoice.InvoiceDate,
+        Employee.EmployeeId,
+        Employee.FirstName.label("Employee Firstname"),
+        Employee.LastName.label("Employee Lastname")
+    )
+    .join_from(Track, Album)
+    .join_from(Track, Genre)
+    .join_from(Track, MediaType)
+    .join_from(Album, Artist)
+    .outerjoin_from(Track, InvoiceLine)
+    .outerjoin_from(InvoiceLine, Invoice)
+    .outerjoin_from(Invoice, Customer)
+    .outerjoin_from(Customer, Employee)
+)
 
-engine = create_engine(r"sqlite:///C:/Users/blinklet/Documents/chinook-database/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite")
-Base = automap_base()
-Base.prepare(autoload_with=engine)
+dataframe = pd.read_sql(statement, engine)
 
-Album = Base.classes.Album
-Artist = Base.classes.Artist
-Customer = Base.classes.Customer
-Employee = Base.classes.Employee
-Genre = Base.classes.Genre
-Invoice = Base.classes.Invoice
-InvoiceLine = Base.classes.InvoiceLine
-MediaType = Base.classes.MediaType
-Playlist = Base.classes.Playlist
-Track = Base.classes.Track
-playlisttrack = Base.metadata.tables['PlaylistTrack']
-
-statement = (select(Playlist.Name.label("Playlist"),
-                Album.Title.label("Album"),
-                Track.Name.label("Track"),
-                Track.Composer,
-                Artist.Name.label("Artist"),
-                Genre.Name.label("Genre"),
-                MediaType.Name.label("Media")
-                )
-            .join_from(Playlist, playlisttrack)
-            .join_from(playlisttrack, Track)
-            .join_from(Track, Album)
-            .join_from(Track,Genre)
-            .join_from(Track,MediaType)
-            .join_from(Album, Artist))
-
-playlist_table = pd.read_sql(sql=statement, con=engine)
-
-playlist_table.to_excel("track_table.xlsx", index=False)
+print(dataframe.shape)
+display(dataframe.tail())
 ```
+
+A sample of the data in the dataframe is shown below. You can see we have 3,759 rows and that some rows contain blank data where tracks have not sold.
+
+![](./Images/pandas030.png)
+
+Next, create a new dataframe that groups track sales by quarter and plot the results
+
+```python
+df = (dataframe[['InvoiceDate','Quantity','UnitPrice']]
+       .dropna()
+       .rename(columns = {'UnitPrice':'Revenue'})
+       .groupby(pd.Grouper(key="InvoiceDate", freq='3M')).sum()
+       .head(-1).tail(-1)    # drop first and last period
+      )
+
+display(df.plot())
+```
+
+You should see output like:
+
+![](./Images/pandas040.png)
+
+
+Next, analyze total revenue per country:
+
+```python
+df = (dataframe[['Country','UnitPrice']]
+       .rename(columns = {'UnitPrice':'Revenue'})
+       .groupby(pd.Grouper(key="Country")).sum()
+       .sort_values(by = 'Revenue', ascending = False)
+      )
+
+display(df.plot(kind='bar'))
+```
+
+You should see an output like:
+
+![](./Images/pandas041.png)
+
+Finally, see how the total number of units sold in each genre correlates with the total number of units available in each genre:
+
+```python
+df = (dataframe[['Genre','Quantity']]
+       .rename(columns = {'Quantity':'# Sold'})
+       .groupby("Genre", as_index=False)['# Sold'].sum()
+      )
+
+df2 = (dataframe[['Genre','TrackId']]
+       .rename(columns = {'TrackId':'# Tracks available'})
+       .groupby("Genre", as_index=False)["# Tracks available"].count()
+      )
+
+df3 = pd.merge(df, df2)
+
+display(df3.plot(kind='scatter', x='# Sold', y='# Tracks available'))
+```
+
+As you can see in the scatter plot below, there appears to be a strong correlation between the number if tracks sold and the number of tracks available in each category:
+
+![](./Images/pandas042.png)
+
+# Conclusion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
