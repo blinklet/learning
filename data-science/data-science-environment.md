@@ -136,7 +136,7 @@ While Pandas and NumPy are the current standard for data analytics in Python, so
 
 
 
-# Get Data
+# Data sources
 
 To practice the basics of data science, you need data. Eventually, you need to learn how to work with many sources of data, such as:
 
@@ -149,13 +149,13 @@ While you work in the Analytics team, most of the data you will access will come
 
 When you are at the beginning of your learning, it may be best to practice on a "dummy" database so you do not accidentally cause issues with a production database. 
 
-## Data sources
+## Available public databases
 
 If you cannot get access to HRDP when you start experimenting with data science tools like Python and SQLAlchemy, use another available database for practice. There is lots of data [available to the public](https://www.dropbase.io/post/top-11-open-and-public-data-sources) that you may want to analyze as you learn more about data science. We want to learn how to analyze data stored in a database so we need data available in that format.
 
 The best solution is to install an SQL database engine like [SQLite](https://www.sqlite.org/index.html) on your PC and download a database backup from a public repository. [Kaggle](https://www.kaggle.com/) offers many [database files that are suitable for learning data science](https://www.kaggle.com/datasets?search=SQL) but you have to be careful. Many databases offered by Kaggle are poorly designed and cause errors when SQLAlchemy performs database reflection. Experts may be able to work around these problems but they can frustrate beginners. Other, properly-designed databases like the [Northwind database](https://github.com/jpwhite3/northwind-SQLite3), or the [Chinook database](https://github.com/lerocha/chinook-database), may also be more suitable.
 
-In this document, we will use the Chinook database, which is a public created that tries to emulate a media store's database. It contains customer names and addresses, invoice data, and data about media files for sale.
+In this document, we will use the Chinook database, which is a public database that tries to emulate a media store's database. It contains customer names and addresses, invoice data, and data about media files for sale.
 
 Clone the *[Chinook database repository](https://github.com/lerocha/chinook-database)* to your computer. In the Windows terminal, enter the commands:
 
@@ -174,9 +174,13 @@ Mode                 LastWriteTime         Length Name
 -a----        2023-03-06   8:28 AM        1067008 Chinook_Sqlite_AutoIncrementPKs.sqlite
 ```
 
-## Connect to the database
+# Build an SQLAlchemy model from an existing database
 
-Start a new Jupyter Notebook. In the first cell, enter the following code to prepare a connection to the database.
+The SQLAlchemy ORM defines database tables as classes. The process of automatically building new classes based on an existing database schema is called [reflection](https://betterprogramming.pub/reflecting-postgresql-databases-using-python-and-sqlalchemy-48b50870d40f). If you start with a properly designed database, you can map classes and relationships using the [SQLAlchemy Automap extension](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html). Database reflection is useful when writing simple, single-use scripts like the ones in this document.
+
+> **NOTE:** Instead of using reflection, it is better to use [Declarative Mapping](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html) to build SQLAlchemy ORM classes. It enables program maintainers to see the database information expressed in Python code. It also makes a program more robust, because you will be better able to predict the impact that changes in the database schema will have on your program. See *Appendix A* for more information. However, Declarative Mapping requires you to learn more about the ORM than we can cover in this document. So, we use reflection in our example.
+
+First, create a connection to the database Start a new Jupyter Notebook. In the first cell, enter the following code to prepare a connection to the database.
 
 ```python
 from sqlalchemy import create_engine
@@ -184,16 +188,9 @@ from sqlalchemy import create_engine
 engine = create_engine(r"sqlite:///C:/Users/blinklet/Documents/chinook-database/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite")
 ```
 
-Run the cell. The code will create an [engine](https://docs.sqlalchemy.org/en/20/core/engines_connections.html) object which represents a connection to the database specified in the URL passed to the *create_engine* function.
+Run the cell. The code will create an [engine](https://docs.sqlalchemy.org/en/20/core/engines_connections.html) object which includes a connection to the database specified in the URL passed to the *create_engine* function.
 
-You are now ready to get data from the database connection.
-
-
-# Build an SQLAlchemy model from an existing database
-
-The SQLAlchemy ORM defines database tables as classes. The process of automatically building new classes based on an existing database schema is called [reflection](https://betterprogramming.pub/reflecting-postgresql-databases-using-python-and-sqlalchemy-48b50870d40f). If you start with a properly designed database, you can map classes and relationships using the [SQLAlchemy Automap extension](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html). Database reflection is useful when writing simple, single-use scripts like the ones in this document.
-
-Instead of using reflection, it is better to use [Declarative Mapping](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html) to build SQLAlchemy ORM classes. It enables program maintainers to see the database information expressed in Python code. It also makes a program more robust, because you will be better able to predict the impact that changes in the database schema will have on your program. See *Appendix A* for more information. However, Declarative Mapping requires you to learn more about the ORM than we can cover in this document. So, we use reflection in our example.
+You are now ready to get information from the database connection.
 
 To automatically generate an object model from the Chinook database, add a new cell to your Jupyter notebook, and enter and run the following code:
 
@@ -203,23 +200,25 @@ from sqlalchemy.orm import Session
 
 Base = automap_base()
 Base.prepare(autoload_with=engine)
+```
 
+You used the *automap_base* function to create a [declarative base class](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html#basic-use) named *Base* and then used its *prepare* method to reflect the database schema and add to the *Base.metadata* class the metadata that describes the database. 
+
+Print the database table metadata using the following statement:
+
+```python
 print(*Base.metadata.tables, sep=", ")
 ```
 
-You used the *automap_base* function to create a [declarative base class](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html#basic-use) named *Base* and then used its *prepare* method to reflect the schema and produce mappings. You should see the output displayed below, showing the table names in the Chinook database.
+You should see the output displayed below, showing the table names in the Chinook database.
 
 ```
 Album, Artist, Customer, Employee, Genre, Invoice, InvoiceLine, Track, MediaType, Playlist, PlaylistTrack
 ```
 
-You know the Base object now maps the database structure because you were able to get the list of table names from the metadata created in the new Base object.
-
-The output is similar to what we saw when we used the *inspect* function, previously because *inspect* also uses reflection to get the database schema information.
-
 ## View the ORM classes
 
-The reason programmers use the SQLAlchemy ORM is so that they can treat database tables like Python classes in their programs and work in the "Pythonic" way. Let's find out some more information about the mapped classes that reflect the tables in the database.
+The reason programmers use the SQLAlchemy ORM is so that they can treat database tables like Python classes in their programs and work in the "Pythonic" way. Let's find out some more information about the SQLAlchemy classes that map the tables in the database.
 
 List the SQLAlchemy classes mapped by the automap extension.
 
@@ -340,7 +339,7 @@ Table: Track
 
 In the listing above, you can [identify](https://condor.depaul.edu/gandrus/240IT/accesspages/relationships.htm) that the *PlaylistTrack* table is an [association table](https://docs.sqlalchemy.org/en/20/orm/basic_relationships.html#many-to-many) that supports a [many-to-many relationships](https://medium.com/@BryanFajardo/how-to-use-associative-entities-in-relational-databases-4456a2c71cda) between two other tables. A typical association table has two columns and each of its columns are both Primary Keys and Foreign Keys. 
 
-Association tables are declared differently in the ORM than normal tables in the SQLAlchemy ORM. They are not reflected as ORM classes so there will be no *PlaylistTrack* class in the ORM. The association table is defined as a table object in the ORM.
+Association tables are declared differently in the ORM than normal tables in the SQLAlchemy ORM. They are not reflected as ORM classes so there will be no *PlaylistTrack* class in the ORM. The association table is defined only as a table object in the ORM.
 
 After looking at all the information output, you should be able to draw a diagram showing the database tables and relationships, like the one below:
 
@@ -366,13 +365,13 @@ playlisttrack = Base.metadata.tables['PlaylistTrack']
 
 # Get data from the database
 
-Up until now, we've been playing with the information you can get about the database schema and how to define the ORM's declarative base object automatically when working with an existing database. Next, we need to get data out of that database so we can analyze it.
+Up until now, we've been studying information you can get about the database schema and how to automatically define the ORM's declarative base object when working with an existing database. Next, we need to get data out of that database so we can analyze it.
 
 In this example, we will use the [Pandas framework](https://pandas.pydata.org/) to get data from the database. You can also query the database using SQLAlchemy but, since we will use Pandas to analyze data, we will also use it to query data.
 
 ## Query data and convert it into Pandas dataframes
 
-Create an SQLAlchemy query and load its results into a Pandas dataframe. First, open a [session](https://docs.sqlalchemy.org/en/20/orm/session_basics.html) and ask for all the data in one table.
+Create an SQLAlchemy query and load its results into a Pandas dataframe. 
 
 ```python
 import pandas as pd
@@ -410,9 +409,21 @@ print(pd.options.display.max_columns)
 
 You will see the default maximum number of rows that can be viewed is 60 and the default maximum number of columns that can be viewed is 20.
 
-## Joining datafames
+> **NOTE:** If you are writing short scripts, you may choose not to use SQLAchemy to manage the database connection and may instead pass the database connection URL directly to pandas, as shown below:
+>
+>```python
+>url = r"sqlite:///C:/Users/blinklet/Documents/chinook-database/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite"
+>
+>pd.read_sql_table('Track', url)
+>```
 
-To get more interesting data sets, we need to join database tables. For now, we will accomplish this by reading different tables into Pandas dataframes and merge the dataframes. First, create a new dataframe by reading teh contents of the Atyist table:
+
+
+## Merging pandas datafames
+
+To get more interesting data sets, we need to [join database tables](https://learnsql.com/blog/how-to-join-tables-sql/). For now, we will accomplish this by reading different tables into Pandas dataframes and [merging the dataframes](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html). 
+
+First, create a new dataframe by reading the contents of the Artist table:
 
 ```python
 artists = pd.read_sql_table(table_name='Artist', con=engine)
@@ -435,7 +446,9 @@ The output should look like:
 4         5    Alice In Chains
 ```
 
-I want to create a dataframe that lists the full artist name associated with every album. So, I will merge the dataframe *albums*, which contains the Album table's data, and the dataframe *artists*, which contains the Artist table's data, into a new dataframe named *df1*.
+### Merging with inner joins
+
+I want to create a dataframe that lists the full artist name associated with every album. So, I will merge the dataframe *albums*, which contains the Album table's data, and the dataframe *artists*, which contains the Artist table's data, into a new dataframe named *df1*. By default, the [pandas merge method](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.merge.html) operates like an *inner join* operation so it merges rows that match between the left and right side of the join. You can also explicitly tell pandas what type of join to use, using the syntax shown below;:
 
 ```python
 df1 = pd.merge(left = albums, right = artists, how = 'inner')
@@ -536,20 +549,233 @@ Since we are using a Jupyter Notebook, we can use the [*display* function](https
 
 ![](./Images/pandas001.png)
 
-Now you have a tables showing 3,503 tracks with information about the album, artists, composer, and length of each track.
+Now you have a table that has 3,503 tracks. It contains information about the album, artists, composer, and length of each track.
+
+### Merging multiple dataframes
+
+Pandas dataframes have a *merge()* method that works the same as the Pandas *merge()* function with the calling dataFrame being considered the left side in the join.
+
+You can chain multiple *merge()* methods together to join multiple dataframes in one statement. But you have to be careful about overwriting columns that have the same name. In this case, the dataframes have more than one columns with the same names and it confuses Pandas. So, specify the column that each merge should match on.
+
+For example:
+
+```python
+albums = pd.read_sql_table(table_name='Album', con=engine)
+artists = pd.read_sql_table(table_name='Artist', con=engine)
+tracks = pd.read_sql_table(table_name='Track', con=engine)
+
+df1 = albums.merge(artists, on='ArtistId').merge(tracks, on='AlbumId')
+```
+
+To recreate the final result we previously accomplished, chain all the necessary methods together into one statement (although consider if you are sacrificing readability):
+
+```python
+df1 = (albums
+    .merge(artists, on='ArtistId')
+    .merge(tracks, on='AlbumId')
+    .rename(columns = {'Name_y':'Track', 'Title':'Album',
+        'Milliseconds':'Length','Name_x':'Artist'})
+    .drop(['AlbumId', 'TrackId', 'MediaTypeId', 
+        'GenreId', 'Bytes', 'UnitPrice', 'ArtistId'], axis=1)
+      )
+```
+
+### Merging with outer joins
+
+The Pandas *merge()* function creates a new dataframe containing rows that match on the defined columns in each table and leaves out rows that do not match. As mentioned above, this is called an *inner join* and is the default operation.
+
+Sometimes, you may want to include rows that do not match on the defined columns in each table. This is called at [*outer join*](https://www.freecodecamp.org/news/sql-join-types-inner-join-vs-outer-join-example/).
+
+Consider the Employee and Customer tables in the Chinook database. Every customer has a SupportRepId key that 
+
+
+
+
+
+
+
+
+
+
+
+
+
+, what if we want to read data related to customers supported by each employee, we would normally join the Employee table and the Customer table to get this data. However, the default inner join only returns rows if the Employee is actually supporting customers so the returned dataframe is missing employees.
+
+Work through the following example to see how this works.
+
+First, see how many employees work for the Chinook company.
+
+```python
+employees = pd.read_sql_table(table_name='Employee', con=engine)
+print(employees.shape)
+print(employees)
+```
+
+The first part of the Employee table looks like the output below:
+
+```
+(8, 15)
+   EmployeeId  LastName FirstName                Title  ReportsTo  BirthDate  \
+0           1     Adams    Andrew      General Manager        NaN 1962-02-18   
+1           2   Edwards     Nancy        Sales Manager        1.0 1958-12-08   
+2           3   Peacock      Jane  Sales Support Agent        2.0 1973-08-29   
+3           4      Park  Margaret  Sales Support Agent        2.0 1947-09-19   
+4           5   Johnson     Steve  Sales Support Agent        2.0 1965-03-03   
+5           6  Mitchell   Michael           IT Manager        1.0 1973-07-01   
+6           7      King    Robert             IT Staff        6.0 1970-05-29   
+7           8  Callahan     Laura             IT Staff        6.0 1968-01-09   
+```
+
+We see that the Chinook company has eight employees. 
+
+Let's look at the dataframe created when we read the Customer table:
+
+```python
+customers = pd.read_sql_table(table_name='Customer', con=engine)
+print(customers.shape)
+print(customers.head(3))
+```
+
+The first three rows of the customers dataframe looks like below:
+
+```
+(59, 13)
+   CustomerId FirstName   LastName  \
+0           1      Luís  Gonçalves   
+1           2    Leonie     Köhler   
+2           3  François   Tremblay   
+
+                                            Company  \
+0  Embraer - Empresa Brasileira de Aeronáutica S.A.   
+1                                              None   
+2                                              None   
+
+                           Address                 City State  Country  \
+0  Av. Brigadeiro Faria Lima, 2170  São José dos Campos    SP   Brazil   
+1          Theodor-Heuss-Straße 34            Stuttgart  None  Germany   
+2                1498 rue Bélanger             Montréal    QC   Canada   
+
+  PostalCode               Phone                 Fax                  Email  \
+0  12227-000  +55 (12) 3923-5555  +55 (12) 3923-5566   luisg@embraer.com.br   
+1      70174    +49 0711 2842222                None  leonekohler@surfeu.de   
+2    H2G 1A7   +1 (514) 721-4711                None    ftremblay@gmail.com   
+
+   SupportRepId  
+0             3  
+1             5  
+2             3  
+```
+
+We see Chinook has fifty-nine customers. We can also check that every customer has a support representative assigned to them:
+
+```python
+test = customers.loc[customers['SupportRepId'].isnull()] 
+print(len(test))
+```
+```
+0
+```
+
+We see zero customers have a null, or "NaN", value in their *SupportRepId* column. 
+
+Now we need to merge the *customers* and *employees* dataframes. But, we want to merge by matching each customer's *SupportRepId* with each employee's *EmployeeId*.
+
+A default (inner join) merge would look like the following:
+
+```python
+dataframe = pd.merge(
+    employees, 
+    customers, 
+    left_on='EmployeeId', 
+    right_on='SupportRepId'
+)
+```
+
+If we do some additional grouping and cleanup of the merged dataframe, and then print it:
+
+```python
+emp_info = ['EmployeeId','LastName_x', 'FirstName_x', 'Title']
+
+dataframe2 = (dataframe
+              .groupby(emp_info, 
+                       as_index=False, 
+                       dropna=False)['CustomerId'].count()
+             )
+
+dataframe2.rename(columns = {'CustomerId':'# Customers'}, inplace=True)
+
+dataframe2['Employee Name'] = (dataframe2['FirstName_x'] 
+                               + ' ' 
+                               + dataframe2['LastName_x'])
+
+dataframe2.drop(['FirstName_x', 'LastName_x'], 
+                axis=1, 
+                inplace=True)
+
+dataframe2 = dataframe2[['EmployeeId',
+                         'Employee Name',
+                         'Title',
+                         '# Customers']]
+
+print(dataframe2.to_string(index=False))
+```
+
+We see the following output:
+
+```
+ EmployeeId Employee Name               Title  # Customers
+          3  Jane Peacock Sales Support Agent           21
+          4 Margaret Park Sales Support Agent           20
+          5 Steve Johnson Sales Support Agent           18
+```
+
+This is nice, but we know we have eight employees. And, we wanted a report showing the customers supported by all eight employees. Apparently, five of our employees do not support customers so they were excluded from the inner join of the *employees* ad *customers* dataframes.
+
+To ensure that we get all employees into the merged dataframe, even if their *EmployeeId* does not match with a customer's *SupportRepId*, we need to do an outer join. Specifically, a left outer join because we want to include unmatched rows from the left-side table (in the merge statement), but not from the right side. 
+
+A merge statement that [executes a left outer join](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html#brief-primer-on-merge-methods-relational-algebra) is shown below:
+
+```python
+dataframe = pd.merge(
+    employees, 
+    customers, 
+    left_on='EmployeeId', 
+    right_on='SupportRepId',
+    how = 'left'
+)
+```
+
+After you group and clean up the column headings, as previously shown above, you get the following output:
+
+```
+EmployeeId    Employee Name               Title  # Customers
+          1     Andrew Adams     General Manager            0
+          2    Nancy Edwards       Sales Manager            0
+          3     Jane Peacock Sales Support Agent           21
+          4    Margaret Park Sales Support Agent           20
+          5    Steve Johnson Sales Support Agent           18
+          6 Michael Mitchell          IT Manager            0
+          7      Robert King            IT Staff            0
+          8   Laura Callahan            IT Staff            0
+```
+
+Now all the employees records are in the dataframe that was grouped so we see that five employees supported no customers. This makes sense when you look at the employees' titles.
+
+And, when you print the merged dataframe, you can see that there are five additional rows and each of those additional rows contains employee information but no customer information because no customers matched with that employee.
 
 # Generating SQL statements in SQLAlchemy
 
 The pandas *read_sql_table* method reads all the rows from the requested table from the SQL database and stores them in a pandas dataframe.
 
-Sometimes, however, you may want more control over exactly how much data you pull into your program. If you want to get specific information from the database, you can create SQLAlchemy ORM statements and use the pandas *read_sql* method to read groups of rows, single rows, or filtered rows from the database.
+Sometimes, however, you may want more control over exactly how much data you pull into your program. If you want to get specific information from the database, you can create SQLAlchemy ORM statements and use the pandas *read_sql_query* method to read groups of rows, single rows, or filtered rows from the database.
 
 for example, the following code uses the SQLAlchemy select function to build an SQL query that selects all rows in the Album table. 
 
 ```python
 statement = (select(Artist))
 
-dataframe = pd.read_sql(sql=statement, con=engine)
+dataframe = pd.read_sql_query(sql=statement, con=engine)
 
 print(dataframe.shape)
 print(dataframe.head(5))
@@ -574,7 +800,7 @@ As another example, let's say we only wanted to analyze data from the band, "Ali
 ```python
 statement = (select(Artist).where(Artist.Name=='Alice In Chains'))
 
-dataframe = pd.read_sql(sql=statement, con=engine)
+dataframe = pd.read_sql_query(sql=statement, con=engine)
 
 print(dataframe.shape)
 print(dataframe.head(5))
@@ -592,7 +818,7 @@ What if you wanted to analyze data from a random sample of five artists, and you
 ```python
 statement = (select(Artist).order_by(func.random()).limit(5))
 
-dataframe = pd.read_sql(sql=statement, con=engine)
+dataframe = pd.read_sql_query(sql=statement, con=engine)
 
 print(dataframe.shape)
 print(dataframe.head(5))
@@ -613,7 +839,7 @@ Another way to create the dataframe containing album and track information from 
 
 In a properly-designed database, the relationships between tables are already defined using foreign keys and association tables. SQLAlchemy objects can use these relationships to automatically connect data in different tables together.
 
-Using the *table_info* function you created earlier, look at teh relationships between the tables named *Album*, *Track*, and *Artist*.
+Using the *table_info* function you created earlier, look at the relationships between the tables named *Album*, *Track*, and *Artist*.
 
 ```python
 print(table_info('Album'))
@@ -660,17 +886,16 @@ We see that the Album table has a foreign key that points to the Artist table an
 Knowing that these relationships exist, we can simply join all the data from multiple tables together using the *select()* functions' *join()* method. Here we select data from the Album, Track, and Artist tables by joining the Track and Artist tables with the Album table.
 
 ```python
-print(f"Get inner join of tables Album, Track, and Artist")
 statement = (select(Album, Track, Artist)
      .join(Track)
      .join(Artist)
     )
 ```
 
-Use the pandas *read_sql* method to get data selected by the statement and load it into a dataframe.
+Use the pandas *read_sql_query* method to get data selected by the statement and load it into a dataframe.
 
 ```python
-df4 = pd.read_sql(sql=q.statement, con=engine)
+df4 = pd.read_sql_query(sql=q.statement, con=engine)
 
 print(df4.shape)
 display(df4.head())
@@ -684,8 +909,6 @@ The resulting dataset will look like the following:
 You can see the columns, and the column names assigned by SQLAlchemy the query result. To get only the specific columns you need, create a new statement that will select each column by name, starting with the *Album.Title* column. Then, [rename the columns](https://devsheet.com/code-snippet/column-name-as-alias-name-sqlalchemy/) in the select statement using the *label* method.
 
 ```python
-print(f"Get inner join of tables Album, Track, and Artist")
-
 statement = (select(Album.Title.label("Album"),
             Artist.Name.label("Artist"),
             Track.Name.label("Track"),
@@ -694,13 +917,12 @@ statement = (select(Album.Title.label("Album"),
      .join(Track)
      .join(Artist)
     )
-
 ```
 
 Load the selected data from the database into a pandas dataframe:
 
 ```python
-dataframe = pd.read_sql(sql=statement, con=engine)
+dataframe = pd.read_sql_query(sql=statement, con=engine)
 
 print(dataframe.shape)
 display(dataframe.head().style.format(thousands=","))
@@ -713,7 +935,7 @@ The result is shown below:
 
 You see that joining tables and selecting specific columns in an SQLAlchemy query can give you the data you need in one step. Reading that data into a Pandas dataframe makes it easy to analyze the results.
 
-You can create very large datasets by joining many tables together. As you create more complex queries, SQLAlchemy may not be able to automatically choose how tables will join. You can assist SQLAlchemy in determining relationships between tables by using the *join_from* method, which will specify which tables are on teh left and right side of a join. 
+You can create very large datasets by joining many tables together. As you create more complex queries, SQLAlchemy may not be able to automatically choose how tables will join. You can assist SQLAlchemy in determining relationships between tables by using the *join_from* method, which will specify which tables are on the left and right side of a join. 
 
 For example, if you want to know the names of all the tracks purchased by each customer, create the following SQLAlchemy select statement:
 
@@ -737,7 +959,7 @@ statement = (select(Customer.FirstName,
 Read the data selected by the statement into a pandas dataframe:
 
 ```python
-dataframe = pd.read_sql(sql=statement, con=engine)
+dataframe = pd.read_sql_query(sql=statement, con=engine)
 
 print(dataframe.shape)
 display(dataframe.head(5).style.format(thousands=","))
@@ -763,7 +985,7 @@ statement = (select(Playlist.Name.label("Playlist"),
                 .join_from(Track, Album)
                 .join_from(Album, Artist))
 
-dataframe = pd.read_sql(sql=statement, con=engine)
+dataframe = pd.read_sql_query(sql=statement, con=engine)
 
 print(dataframe.shape)
 display(dataframe.head(5))
@@ -773,21 +995,90 @@ The result was a dataframe with 4 columns and 8,715 rows.
 
 ![](./Images/pandas016.png)
 
+## Outer joins in SQLAlchemy
+
+As we saw when merging dataframes with pandas, sometimes you need to perform an *outer join* to get all the data you want.
+
+In SQLAlchemy, a normal (inner) join of the Employee and Customer tables would look like:
+
+```python
+statement = select(
+    Employee.EmployeeId, 
+    (Employee.FirstName + ' ' + Employee.LastName).label("Employee Name"), 
+    Employee.Title,
+    func.count(Customer.CustomerId)
+).outerjoin(Customer).group_by(Employee.EmployeeId)
+
+with Session(engine) as session:
+    results_proxy = session.execute(statement)    
+    results = results_proxy.fetchall()
+    headers = results_proxy.keys()
+
+print(tabulate(results, headers))
+```
+```
+  EmployeeId  Employee Name    Title                  count
+------------  ---------------  -------------------  -------
+           3  Jane Peacock     Sales Support Agent       21
+           4  Margaret Park    Sales Support Agent       20
+           5  Steve Johnson    Sales Support Agent       18
+```
+
+But, if we perform an outer join by changing the statement to the following:
+
+```
+statement = select(
+    Employee.EmployeeId, 
+    (Employee.FirstName + ' ' + Employee.LastName).label("Employee Name"), 
+    Employee.Title,
+    func.count(Customer.CustomerId)
+).outerjoin(Customer).group_by(Employee.EmployeeId)
+```
+
+We see we now get all employees in the result, even the ones who do not support customers.
+
+```
+ EmployeeId    Employee Name               Title  # Customers
+          1     Andrew Adams     General Manager            0
+          2    Nancy Edwards       Sales Manager            0
+          3     Jane Peacock Sales Support Agent           21
+          4    Margaret Park Sales Support Agent           20
+          5    Steve Johnson Sales Support Agent           18
+          6 Michael Mitchell          IT Manager            0
+          7      Robert King            IT Staff            0
+          8   Laura Callahan            IT Staff            0
+```
+
+Unlike the version of this example where we merged Pandas dataframes, we did not need to specify which columns to join on. SQLAlchemy knows the relationships between the Employee and Customer tables because it is defined in the database schema and is now reflected in the SQLAlchemy ORM.
+
+
 # SQLAlchemy query basics
 
 Up until this point, we have been using Pandas to query the SQL database, using an SQLAlchemy ORM select statement that tells Pandas which data to pull from the database. This works well when you want to gather large data sets into Pandas for organization and analysis.
 
-There may be times when you want to read data from an SQL database and receive the result directly, without loading it into a Pandas dataframe. You do this using the SQLAlchemy's *Session* object. 
+There may be times when you want to read data from an SQL database and receive the result directly, without loading it into a Pandas dataframe. You do this using the [SQLAlchemy's *Session* object]((https://docs.sqlalchemy.org/en/20/orm/session_basics.html)). 
 
 Create a new database session named *session* by calling the *Session* class and passing it the *engine* object you created at the start of this document, using SQLAlchemy's *create_engine* method. 
 
-For example, using the SQLAlchemy *select* statement you created earlier as the parameter to the *session.execute* method, get a Result object from the database:
+For example, using the SQLAlchemy *select* below as the parameter to the *session.execute* method, get a Result object from the database:
 
 ```python
+statement = (select(Album.Title.label("Album"),
+            Artist.Name.label("Artist"),
+            Track.Name.label("Track"),
+            Track.Composer, 
+            Track.Milliseconds.label("Length"))
+     .join(Track)
+     .join(Artist)
+    )
+
 with Session(engine) as session:
     print(type(session.execute(statement)))
     print(session.execute(statement))
 ```
+
+You can see that the session.execute method returns a *Result* object, which is a proxy for the data queried from the database.
+
 ```
 <class 'sqlalchemy.engine.result.ChunkedIteratorResult'>
 <sqlalchemy.engine.result.ChunkedIteratorResult object at 0x00000173831B5550>
@@ -902,11 +1193,24 @@ From this output, we see
 * The *fetchmany()* method returns a list that contains Row objects, which are similar to [Named Tuples](https://docs.python.org/3/library/collections.html#collections.namedtuple). But, when printed, they look like normal Tuples.
 
 
-## More session methods
+## More querying methods
 
 The SQLAlchemy session object offers [several methods for querying](https://docs.sqlalchemy.org/en/20/orm/session_basics.html#querying) rows or items from a database. You can use the *execute()* method to get a result containing database rows, the *scalars()* method to get results containing single items from each row, or the [*scalar()* method](https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.scalars) to get the actual value of a single item in a single row.
 
 Below is an example of using the various methods, and chaining additional methods onto either the original statement object or onto the session object.
+
+Given the following SQLAlchemy select statement:
+
+```python
+statement = (select(Album.Title.label("Album"),
+            Artist.Name.label("Artist"),
+            Track.Name.label("Track"),
+            Track.Composer, 
+            Track.Milliseconds.label("Length"))
+     .join(Track)
+     .join(Artist)
+    )
+```
 
 The *session.execute()* method returns a SQLAlchemy ORM Result object.
 
@@ -984,7 +1288,7 @@ For Those About To Rock We Salute You
 
 ## Selecting rows
 
-You can create an SQL statement that search for rows that match a specified criteria. For example, here is a script that returns the first four records the artist named "Alice in Chains" and prints the track names and composer of each track.
+You can create an SQL statement that searches for rows that match a specified criteria, using the *where()* method. For example, below is a script that returns the rows where the artist is "Alice in Chains" 
 
 ```python
 statement = (select(Album.Title.label("Album"),
@@ -999,11 +1303,17 @@ statement = (select(Album.Title.label("Album"),
 
 with Session(engine) as session:
     result = session.execute(statement).fetchall()
-    
-print()
+```
+
+The *result* object is a list of *Row* objects selected from the database based on the criteria in the *where()* method. Print the track name and track composer from each Row object in the list named *result*.
+
+```python
 for row in result:
     print(f"Track name: {row.Track:18} Composer: {row.Composer}")
 ```
+
+The output is:
+
 ```
 Track name: We Die Young       Composer: Jerry Cantrell
 Track name: Man In The Box     Composer: Jerry Cantrell, Layne Staley
@@ -1017,6 +1327,46 @@ Track name: Put You Down       Composer: Jerry Cantrell
 Track name: Confusion          Composer: Jerry Cantrell, Michael Starr, Layne Staley
 Track name: I Know Somethin (Bout You) Composer: Jerry Cantrell
 Track name: Real Thing         Composer: Jerry Cantrell, Layne Staley
+```
+
+## Convert an ORM result into a Pandas dataframe
+
+You may wish to perform a query and get a result in the SQLAlchemy ORM and then convert the result into a Pandas dataframe. This allows you to separate your program's database logic from its business logic. 
+
+Instead of building a select statement and running it as part of the Pandas *read_sql_query* method, get the ORM result object from the SQLAlchemy session. Then use the [Pandas *Dataframe*](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html) class to convert the received data into a dataframe. For example:
+
+```python
+statement = (
+    select(
+        Playlist.Name.label("Playlist"),
+            Track.Name.label("Track"),
+            Album.Title.label("Album"),
+            Artist.Name.label("Artist")
+    )
+    .join_from(Playlist, playlisttrack)
+    .join_from(playlisttrack, Track)
+    .join_from(Track, Album)
+    .join_from(Album, Artist)
+)
+
+with Session(engine) as session:
+    results_proxy = session.execute(statement)
+    
+    headers = results_proxy.keys()
+    results = results_proxy.fetchall()
+
+dataframe = pd.DataFrame(results, columns=headers)
+
+print(dataframe.sample(3).to_string(index=False))
+```
+
+The output should look like:
+
+```
+  Playlist               Track                   Album        Artist
+     Music      No Bone Movies                 Tribute Ozzy Osbourne
+90’s Music Upon A Golden Horse Walking Into Clarksdale  Page & Plant
+90’s Music   The River (Remix)                Tangents The Tea Party
 ```
 
 # Pandas or SQL?
@@ -1265,44 +1615,6 @@ You can see that performing simple calculations and transformations is easier wi
 
 You will want to use complex SQL queries when you need single values from the database for your application, or when you are building your initial data set from a larger database.
 
-## Convert an ORM result into a Pandas dataframe
-
-You may wish to perform a query and get a result in the SQLAlchemy ORM and then convert the result into a Pandas dataframe. This allows you to separate your program's database logic from its business logic. So, instead of building a select statement and running it as part of the Pandas *read_sql* method, get the ORM result object from the SQLAlchemy session. Then use the [Pandas *Dataframe*](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html) class to convert the received data into a dataframe. For example:
-
-```python
-statement = (
-    select(
-        Playlist.Name.label("Playlist"),
-            Track.Name.label("Track"),
-            Album.Title.label("Album"),
-            Artist.Name.label("Artist")
-    )
-    .join_from(Playlist, playlisttrack)
-    .join_from(playlisttrack, Track)
-    .join_from(Track, Album)
-    .join_from(Album, Artist)
-)
-
-with Session(engine) as session:
-    results_proxy = session.execute(statement)
-    
-    headers = results_proxy.keys()
-    results = results_proxy.fetchall()
-
-dataframe = pd.DataFrame(results, columns=headers)
-
-print(dataframe.sample(3).to_string(index=False))
-```
-
-The output should look like:
-
-```
-  Playlist               Track                   Album        Artist
-     Music      No Bone Movies                 Tribute Ozzy Osbourne
-90’s Music Upon A Golden Horse Walking Into Clarksdale  Page & Plant
-90’s Music   The River (Remix)                Tangents The Tea Party
-```
-
 # Visualizing data 
 
 It is easy to display data visualizations when working in a Jupyter notebook. You create a dataframe containing the data you want to visualize and then use the [Pandas dataframe's *.plot()* method](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.plot.html). If you want more functionality or prefer a certain style of charts, you can use one of many specialized Python visualization packages like [MatPlotLib](https://matplotlib.org/), [Seaborn](https://seaborn.pydata.org/), or [Plotly](https://plotly.com/python/).
@@ -1339,7 +1651,7 @@ statement = (
     .outerjoin_from(Customer, Employee)
 )
 
-dataframe = pd.read_sql(statement, engine)
+dataframe = pd.read_sql_query(statement, engine)
 
 print(dataframe.shape)
 display(dataframe.tail())
