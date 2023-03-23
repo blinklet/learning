@@ -187,3 +187,257 @@ Tracks:
     Night Of The Long Knives
     Spellbound
 ```
+
+
+
+
+
+
+
+### Merging with outer joins
+
+The Pandas *merge()* function creates a new dataframe containing rows that match on the defined columns in each table and leaves out rows that do not match. As mentioned above, this is called an *inner join* and is the default operation.
+
+Sometimes, you may want to include rows that do not match on the defined columns in each table. This is called at [*outer join*](https://www.freecodecamp.org/news/sql-join-types-inner-join-vs-outer-join-example/).
+
+Consider the Employee and Customer tables in the Chinook database. Every customer row in the Customer table has a relationship with a Chinook employee. The SupportRepId column in the Customer table is a foreign key that points to the EmployeeId column in the Employee table to create a many-to-one relationship between teh Customer and Employee tables.
+
+When you want to read data related to customers supported by each employee, you need to join the Employee table and the Customer table to get this data. However, the default inner join only returns rows from the joined tables if an employee is actually supporting customers so the returned dataframe is missing employees.
+
+Work through the following example to see how this works.
+
+First, see how many employees work for the Chinook company.
+
+```python
+employees = pd.read_sql_table(table_name='Employee', con=engine)
+print(employees.shape)
+print(employees)
+```
+
+The first part of the Employee table looks like the output below:
+
+```
+(8, 15)
+   EmployeeId  LastName FirstName                Title  ReportsTo  BirthDate  \
+0           1     Adams    Andrew      General Manager        NaN 1962-02-18   
+1           2   Edwards     Nancy        Sales Manager        1.0 1958-12-08   
+2           3   Peacock      Jane  Sales Support Agent        2.0 1973-08-29   
+3           4      Park  Margaret  Sales Support Agent        2.0 1947-09-19   
+4           5   Johnson     Steve  Sales Support Agent        2.0 1965-03-03   
+5           6  Mitchell   Michael           IT Manager        1.0 1973-07-01   
+6           7      King    Robert             IT Staff        6.0 1970-05-29   
+7           8  Callahan     Laura             IT Staff        6.0 1968-01-09   
+```
+
+We see that the Chinook company has eight employees. 
+
+Let's look at the dataframe created when we read the Customer table:
+
+```python
+customers = pd.read_sql_table(table_name='Customer', con=engine)
+print(customers.shape)
+print(customers.head(3))
+```
+
+The first three rows (truncated) of the customers dataframe looks like below:
+
+```
+(59, 13)
+   CustomerId FirstName   LastName  \...  SupportRepId 
+0           1      Luís  Gonçalves                   3
+1           2    Leonie     Köhler                   5
+2           3  François   Tremblay                   3
+```
+
+We see Chinook has fifty-nine customers. We can also check that every customer has a support representative assigned to them:
+
+```python
+test = customers.loc[customers['SupportRepId'].isnull()] 
+print(len(test))
+```
+```
+0
+```
+
+We see zero customers have a null, or "NaN", value in their *SupportRepId* column. 
+
+Now we need to merge the *customers* and *employees* dataframes. But, we want to merge by matching each customer's *SupportRepId* with each employee's *EmployeeId*.
+
+A default (inner join) merge would look like the following:
+
+```python
+dataframe = pd.merge(
+    employees, 
+    customers, 
+    left_on='EmployeeId', 
+    right_on='SupportRepId'
+)
+```
+
+If we do some additional grouping and cleanup of the merged dataframe, and then print it:
+
+```python
+emp_info = ['EmployeeId','LastName_x', 'FirstName_x', 'Title']
+
+dataframe2 = (dataframe
+              .groupby(emp_info, 
+                       as_index=False, 
+                       dropna=False)['CustomerId'].count()
+             )
+
+dataframe2.rename(columns = {'CustomerId':'# Customers'}, inplace=True)
+
+dataframe2['Employee Name'] = (dataframe2['FirstName_x'] 
+                               + ' ' 
+                               + dataframe2['LastName_x'])
+
+dataframe2.drop(['FirstName_x', 'LastName_x'], 
+                axis=1, 
+                inplace=True)
+
+dataframe2 = dataframe2[['EmployeeId',
+                         'Employee Name',
+                         'Title',
+                         '# Customers']]
+
+print(dataframe2.to_string(index=False))
+```
+
+We see the following output:
+
+```
+ EmployeeId Employee Name               Title  # Customers
+          3  Jane Peacock Sales Support Agent           21
+          4 Margaret Park Sales Support Agent           20
+          5 Steve Johnson Sales Support Agent           18
+```
+
+This is nice, but we know we have eight employees. And, we wanted a report showing the customers supported by all eight employees. Apparently, five of our employees do not support customers so they were excluded from the inner join of the *employees* ad *customers* dataframes.
+
+To ensure that we get all employees into the merged dataframe, even if their *EmployeeId* does not match with a customer's *SupportRepId*, we need to do an outer join. Specifically, a left outer join because we want to include unmatched rows from the left-side table (in the merge statement), but not from the right side. 
+
+A merge statement that [executes a left outer join](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html#brief-primer-on-merge-methods-relational-algebra) is shown below:
+
+```python
+dataframe = pd.merge(
+    employees, 
+    customers, 
+    left_on='EmployeeId', 
+    right_on='SupportRepId',
+    how = 'left'
+)
+```
+
+After you group and clean up the column headings, as previously shown above, you get the following output:
+
+```
+EmployeeId    Employee Name               Title  # Customers
+          1     Andrew Adams     General Manager            0
+          2    Nancy Edwards       Sales Manager            0
+          3     Jane Peacock Sales Support Agent           21
+          4    Margaret Park Sales Support Agent           20
+          5    Steve Johnson Sales Support Agent           18
+          6 Michael Mitchell          IT Manager            0
+          7      Robert King            IT Staff            0
+          8   Laura Callahan            IT Staff            0
+```
+
+Now all the employees records are in the dataframe that was grouped so we see that five employees supported no customers. This makes sense when you look at the employees' titles.
+
+And, when you print the merged dataframe, you can see that there are five additional rows and each of those additional rows contains employee information but no customer information because no customers matched with that employee.
+
+
+
+
+
+
+
+
+
+Programmers who are have already mastered the SQL language could simply use the appropriate driver that is compatible with the SQL database they are using, such as [psycopg](https://www.psycopg.org/) for PostgreSQL, or [mysql-connector-python](https://dev.mysql.com/doc/connector-python/en/) for MySQL. Since we are using an SQLite database, we could use the [sqlite package](https://www.sqlite.org/index.html), which is part of the Python standard library. But, remember, you need to know the SQL query language when writing programs that use these Python database drivers.
+
+
+
+
+
+
+
+
+
+You can remove the "ArtistId" column from the data frame because it is now redundant. Keep the *AlbumId* column because you will use it to join data from the Track table in the next step. 
+
+```python
+df1.drop('ArtistId', axis=1)
+```
+
+You can also rename the *Name* column to *Artist* so it is clearer.
+
+```
+df1.rename(columns = {'Name':'Artist'})
+```
+
+Also, you could have done everything in one statement when you merged the dataframes by chaining pandas methods together:
+
+```python
+df1 = (pd
+     .merge(albums, artists)
+     .drop('ArtistId', axis=1)
+     .rename(columns = {'Name':'Artist'}))
+```
+
+Now get data from a third table and merge it with the dataframe *df1*. Get the data from the Track table and load it into a pandas dataframe named *tracks*:
+
+```python
+tracks = pd.read_sql_table(table_name='Track', con=engine)
+```
+
+If you print the first few rows of the *tracks* dataframe, you can see it has 3,503 rows and nine columns. You should expect that Pandas will use the *AlbumId* column in the dataframe *df1* to join on the AlbumId column in dataframe *tracks*.
+
+```python
+print(tracks.head())
+print(tracks.shape)
+```
+```
+   TrackId                                     Name  AlbumId  MediaTypeId  \
+0        1  For Those About To Rock (We Salute You)        1            1   
+1        2                        Balls to the Wall        2            2   
+2        3                          Fast As a Shark        3            2   
+3        4                        Restless and Wild        3            2   
+4        5                     Princess of the Dawn        3            2   
+
+   GenreId                                           Composer  Milliseconds  \
+0        1          Angus Young, Malcolm Young, Brian Johnson        343719   
+1        1                                               None        342562   
+2        1  F. Baltes, S. Kaufman, U. Dirkscneider & W. Ho...        230619   
+3        1  F. Baltes, R.A. Smith-Diesel, S. Kaufman, U. D...        252051   
+4        1                         Deaffy & R.A. Smith-Diesel        375418   
+
+      Bytes  UnitPrice  
+0  11170334       0.99  
+1   5510424       0.99  
+2   3990994       0.99  
+3   4331779       0.99  
+4   6290521       0.99  
+(3503, 9)
+```
+
+You can see how Pandas displays the nine columns by spitting the displayed tables into three "rows". And you can see that we have 3,503 rows in the Tracks table.
+
+Finally, merge the *tracks* dataframe with the *df1* dataframe and, at the same time, delete unneeded columns and rename other columns:
+
+```python
+df3 = (pd
+     .merge(df1, tracks)
+     .drop(['AlbumId','TrackId',
+            'Bytes','UnitPrice',
+            'MediaTypeId','GenreId'], axis=1)
+     .rename(columns = {'Name':'Track', 
+                        'Title':'Album',
+                        'Milliseconds':'Length(ms)'}))
+
+print(df3.shape)
+display(df3.head().style.format(thousands=","))
+```
+
+
+
