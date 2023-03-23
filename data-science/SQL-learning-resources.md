@@ -441,3 +441,42 @@ display(df3.head().style.format(thousands=","))
 
 
 
+
+
+
+
+
+
+
+
+
+
+# NaN and NULL and None
+
+
+Check that every customer has a support representative assigned to them. 
+
+```python
+test = customers.loc[customers['SupportRepId'].isnull()] 
+print(len(test))
+```
+```
+0
+```
+
+We see zero customers have a null, or "NaN", value in their *SupportRepId* column. So, we can place the *customers* dataframe on the right side of the merge function and perform a *left outer join*.
+
+
+
+
+
+
+
+
+
+
+## Available public databases
+
+If you cannot get access to HRDP when you start experimenting with data science tools like Python and SQLAlchemy, use another available database for practice. There is lots of data [available to the public](https://www.dropbase.io/post/top-11-open-and-public-data-sources) that you may want to analyze as you learn more about data science. We want to learn how to analyze data stored in a database so we need data available in that format.
+
+The best solution is to install an SQL database engine like [SQLite](https://www.sqlite.org/index.html) on your PC and download a database backup from a public repository. [Kaggle](https://www.kaggle.com/) offers many [database files that are suitable for learning data science](https://www.kaggle.com/datasets?search=SQL) but many databases offered by Kaggle are poorly designed and cause errors when SQLAlchemy performs database reflection. Experts may be able to work around these problems but they can frustrate beginners. Other, properly-designed databases like the [Northwind database](https://github.com/jpwhite3/northwind-SQLite3), or the [Chinook database](https://github.com/lerocha/chinook-database), may also be more suitable.

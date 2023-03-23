@@ -6,9 +6,11 @@ For some reason, most data science books and blogs avoid showing you how to get 
 
 Data scientists may need to read large amounts of data from existing [databases](https://realpython.com/tutorials/databases/). They may need to study a database's schema so they can understand how to best analyze the data stored in it. In this document, I will show you how to read data from a database and load it into Pandas dataframes for further analysis.
 
+This document focuses on enabling you to get data from a database so you can analyze it but it does not go into details about handling and analyzing data after you get it from the database. While you will see lots of examples of using Pandas methods and SQLAlchemy queries in this document, they are not a comprehensive set of Pandas or SQLAlchemy capabilities.
+
 # Python and databases
 
-Python programmers who use Pandas to perform data analysis have many options for gathering data and incorporating it into their programs. When working with SQL databases, programmers may get data by using Pandas functions, a database driver combined with SQL queries, or by using an [object-relational mapping (ORM) framework](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping), or some combination of these tools.
+Python programmers who use Pandas to perform data analysis have many options for gathering data and incorporating it into their programs. Pandas users may get data from SQL databases using Pandas functions, a database driver combined with SQL queries, or by using an [object-relational mapping (ORM) framework](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping), or some combination of these tools.
 
 Programmers who do not know SQL can use Pandas to read individual SQL database tables into Pandas dataframes. Then, they can use Pandas to join, transform, and filter those dataframes until they create the dataset that they need.
 
@@ -16,7 +18,7 @@ Python programmers who are already proficient in writing [SQL queries](https://w
 
 [^1]: Use the appropriate driver that is compatible with the SQL database you are using, such as [psycopg](https://www.psycopg.org/) for PostgreSQL, or [mysql-connector-python](https://dev.mysql.com/doc/connector-python/en/) for MySQL. Since we are using an SQLite database, we could use the [sqlite package](https://www.sqlite.org/index.html), which is part of the Python standard library.
 
-Finally, programmers who do not know SQL but who still want to build powerful SQL queries may use the SQLAlchemy ORM. It can be used to load selected data into Pandas or to select data directly from the database.  
+Finally, Python programmers who do not know SQL but who still want to build powerful SQL queries in Python programs may use the SQLAlchemy ORM. It can be used to create queries for Pandas functions or to select data directly from the database.  
 
 # Set up your environment
 
@@ -32,9 +34,40 @@ Start by installing Python on your laptop. Go to the [Python web page](https://w
 
 There are many ways to [install Python on Windows](https://learn.microsoft.com/en-us/windows/python/beginners#install-python). I recommend installing it from the *Microsoft Store*. Open the Microsoft Store app and search for Python. Install the latest version. [Python 3.11](https://apps.microsoft.com/store/detail/python-311/9NRWMJP3717K?hl=en-ca&gl=ca&activetab=pivot%3Aoverviewtab&rtc=1) was the latest version at the time I wrote this notebook so all examples use Python 3.11.
 
-## Install Jupyter Notebooks
+## Install SQLAlchemy
 
-Many data scientists use [Jupyter notebooks](https://jupyter.org/) to develop and present their data science projects. This document uses a Jupyter Notebook as an advanced REPL that makes it easier to demonstrate the Python code used to access data from a database and analyze it.
+[SQLAlchemy](https://www.sqlalchemy.org/) is a Python package that helps programmers [interact with SQL databases](https://towardsdatascience.com/sqlalchemy-python-tutorial-79a577141a91) without having to learn the SQL Query language. If you use the SQLAlchemy package, which has a learning curve of its own, then your code will be independent from the [SQL language differences](https://towardsdatascience.com/how-to-find-your-way-through-the-different-types-of-sql-26e3d3c20aab) between the various SQL databases like MySQL, PostgreSQL, and Microsoft SQL Server.
+
+In your virtual environment, install SQLAchemy with the following command:
+
+```powershell
+(env) > pip install SQLAlchemy
+```
+
+## Install Pandas
+
+[Pandas](https://pandas.pydata.org/pandas-docs/stable/index.html) is a Python package that makes working with relational or labeled data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python. [^1]
+
+[^1]: From the [Pandas package overview documentation](https://pandas.pydata.org/pandas-docs/stable/getting_started/overview.html), accessed on Mach 17, 2023]
+
+Install the Pandas Python package and supporting packages for converting Pandas dataframes to Microsoft Excel spreadsheets. Go to the terminal window that is running your virtual environment and enter the commands:
+
+```powershell
+(env) > pip install pandas
+(env) > pip install openpyxl xlsxwriter xlrd
+```
+
+When Pandas is installed, [NumPy](https://numpy.org/) will also be installed NumPy (Numerical Python) is an open source Python library that’s used for working with numerical data in Python.
+
+### New frameworks
+
+While Pandas and NumPy are the current standard for data analytics in Python, some new projects are on the horizon that claim to be more modern and efficient. [Apache Arrow](https://arrow.apache.org/) could be used in place of NumPy and [Polars](https://www.pola.rs/) could be used in place of Pandas. For now, we will use Pandas, which uses Numpy.
+
+## Install Jupyter Notebooks (Optional)
+
+You may, optionally, install [Jupyter](https://jupyter.org/). Many data scientists use Jupyter notebooks as a development environment and to present their results.
+
+This document uses a Jupyter Notebook as an advanced [REPL](https://codewith.mu/en/tutorials/1.0/repl) that makes it easier to demonstrate the Python code used to access data from a database and display the results. If you prefer to use a simple text editor or another REPL, you can still follow along with this tutorial.
 
 To install Jupyter Notebooks:
 
@@ -92,6 +125,8 @@ The Jupyter Notebook web interface looks like the image below.
 
 ![Jupyter Notebook user interface](./Images/JupyterNotebook001.png)
 
+When following along with the code examples in this document, open a new notebook cell for each example, enter the code, and run it. the results of code run in previous cells in held in memory and is available to subsequent cells. For example, a dataframe created in one cell can be used in a later cell.
+
 ### Alternative Jupyter interfaces
 
 JupyterLab is the newer interface for Jupyter Notebooks and has more features.  If you want to open notebooks using the JupyterLab interface, start the Jupyter server with the following command, instead of using the `jupyter notebook` command. 
@@ -101,38 +136,6 @@ JupyterLab is the newer interface for Jupyter Notebooks and has more features.  
 ```
 
 Also, you can [edit Jupyter Notebooks in the VS Code editor](https://code.visualstudio.com/docs/datascience/jupyter-notebooks). Install the VSCode [Python extension](https://code.visualstudio.com/docs/languages/python) and [Jupyter extension](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter), then open the Notebook file in VS Code. The virtual environment must already be activated and the JupyterLab server must already be started.
-
-## Install SQLAlchemy
-
-[SQLAlchemy](https://www.sqlalchemy.org/) is a Python package that helps programmers [interact with SQL databases](https://towardsdatascience.com/sqlalchemy-python-tutorial-79a577141a91) without having to learn the SQL Query language. If you use the SQLAlchemy package, which has a learning curve of its own, then your code will be independent from the [SQL language differences](https://towardsdatascience.com/how-to-find-your-way-through-the-different-types-of-sql-26e3d3c20aab) between the various SQL databases like MySQL, PostgreSQL, and Microsoft SQL Server.
-
-In your virtual environment, install SQLAchemy with the following command:
-
-```powershell
-(env) > pip install SQLAlchemy
-```
-
-## Install Pandas
-
-[Pandas](https://pandas.pydata.org/pandas-docs/stable/index.html) is a Python package that makes working with relational or labeled data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python. [^1]
-
-[^1]: From the [Pandas package overview documentation](https://pandas.pydata.org/pandas-docs/stable/getting_started/overview.html), accessed on Mach 17, 2023]
-
-Install the Pandas Python package and supporting packages for converting Pandas dataframes to Microsoft Excel spreadsheets. Go to the terminal window that is running your virtual environment and enter the commands:
-
-```powershell
-(env) > pip install pandas
-(env) > pip install openpyxl xlsxwriter xlrd
-```
-
-When Pandas is installed, [NumPy](https://numpy.org/) will also be installed NumPy (Numerical Python) is an open source Python library that’s used for working with numerical data in Python.
-
-
-### New frameworks
-
-While Pandas and NumPy are the current standard for data analytics in Python, some new projects are on the horizon that claim to be more modern and efficient. [Apache Arrow](https://arrow.apache.org/) could be used in place of NumPy and [Polars](https://www.pola.rs/) could be used in place of Pandas. For now, we will use Pandas, which uses Numpy.
-
-
 
 # Data sources
 
@@ -149,11 +152,9 @@ When you are at the beginning of your learning, it may be best to practice on a 
 
 ## Available public databases
 
-If you cannot get access to HRDP when you start experimenting with data science tools like Python and SQLAlchemy, use another available database for practice. There is lots of data [available to the public](https://www.dropbase.io/post/top-11-open-and-public-data-sources) that you may want to analyze as you learn more about data science. We want to learn how to analyze data stored in a database so we need data available in that format.
+You can find data sets that are [available to the public](https://www.dropbase.io/post/top-11-open-and-public-data-sources) but very few of them run on database servers. We want to learn how to analyze data stored in a database so we need data available in that format.
 
-The best solution is to install an SQL database engine like [SQLite](https://www.sqlite.org/index.html) on your PC and download a database backup from a public repository. [Kaggle](https://www.kaggle.com/) offers many [database files that are suitable for learning data science](https://www.kaggle.com/datasets?search=SQL) but you have to be careful. Many databases offered by Kaggle are poorly designed and cause errors when SQLAlchemy performs database reflection. Experts may be able to work around these problems but they can frustrate beginners. Other, properly-designed databases like the [Northwind database](https://github.com/jpwhite3/northwind-SQLite3), or the [Chinook database](https://github.com/lerocha/chinook-database), may also be more suitable.
-
-In this document, we will use the *[Chinook database](https://github.com/lerocha/chinook-database)*, which is a public database that tries to emulate a media store's database. It contains customer names and addresses, sales data, and inventory data.
+The best solution is to install an SQL database engine like [SQLite](https://www.sqlite.org/index.html) on your PC and download a database backup from a public repository. In this document, we will use the *[Chinook database](https://github.com/lerocha/chinook-database)*, which is a public database that tries to emulate a media store's database. It contains customer names and addresses, sales data, and inventory data.
 
 [Download the *Chinook_Sqlite.sqlite* file](https://github.com/lerocha/chinook-database/blob/master/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite) from the Chinook Database project's [downloads folder]() and save it to your computer.
 
@@ -175,7 +176,7 @@ print(tables)
 We will cover the Pandas *read_sql_query()* function later in this chapter.
 
 
-## The *read_sql_table* method
+## The *read_sql_table* function
 
 Developers who want to use Pandas to read data from the SQL database into Pandas dataframes may use the Pandas [*read_sql_table()* function](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_sql_table.html). To use the function, simply pass it the name of the table in the database and the URL of the database.
 
@@ -223,18 +224,18 @@ albums columns:  Index(['AlbumId', 'Title', 'ArtistId'], dtype='object')
 
 artists columns:  Index(['ArtistId', 'Name'], dtype='object')
 
-tracks columns:  Index(['TrackId', 'Name', 'AlbumId', 'MediaTypeId', 'GenreId', 'Composer',
-       'Milliseconds', 'Bytes', 'UnitPrice'],
-      dtype='object')
+tracks columns:  Index(['TrackId', 'Name', 'AlbumId', 'MediaTypeId', 'GenreId', 'Composer', 'Milliseconds', 'Bytes', 'UnitPrice'], dtype='object')
 ```
 
 You see that the *AlbumId* column in the *albums* dataframe matches with the *AlbumId* column in the *tracks* dataframe. The *ArtistId* column in the *albums* dataframe matches with the ArtistId in the *artists* dataframe.
 
 ### Merging dataframes
 
-I want to create a dataframe that lists the full artist name associated with every album. So, I will [merge](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html#database-style-dataframe-or-named-series-joining-merging) the dataframe *albums* and the dataframe *artists* into a new dataframe named *df1*. By default, the [pandas merge method](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.merge.html) operates like an [*inner join*](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html#database-style-dataframe-or-named-series-joining-merging) operation so it merges rows that match between the left and right side of the join.
+I want to create a dataframe that lists the full artist name associated with every album. So, I will [merge](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html#database-style-dataframe-or-named-series-joining-merging) the dataframe *albums* and the dataframe *artists* into a new dataframe named *df1*. By default, the [pandas merge method](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.merge.html) operates like an [*inner join*](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html#database-style-dataframe-or-named-series-joining-merging) operation so it returns merged rows that match between the left and right side of the join.
 
-You can join two dataframes together using teh Pandas *merge()* function, or you can join any number of dataframes together using each dataframe's *merge()* method. For example, to merge the albums and artists dataframes, use the following code:
+You can join two dataframes together using the Pandas *merge()* function, or you can join any number of dataframes together using each dataframe's *merge()* method. 
+
+For example, to merge the albums and artists dataframes, use the following code:
 
 ```python
 df1 = pd.merge(left = albums, right = artists)
@@ -265,6 +266,7 @@ You can chain multiple *merge()* methods together to join multiple dataframes in
 
 ```python
 df1 = albums.merge(artists, on='ArtistId').merge(tracks, on='AlbumId')
+
 print(df1.shape)
 display(df1.head(3))
 ```
@@ -285,7 +287,7 @@ display(df1.head(3))
 
 You specified the suffixes in the second *merge()* method because that is where you expect to encounter two columns with the same name, "Name".
 
-You can keep chaining Pandas dataframe methods to create a complex operation that merges dataframes, renames and deletes columns, and more. For example:
+You can keep chaining Pandas dataframe methods to create complex operations that merge dataframes, rename and delete columns, and more. For example:
 
 ```python
 df1 = (
@@ -306,14 +308,16 @@ Which displays the following output:
 
 ![Result of merging multiple tables and chaining multiple methods](./Images/pandas052.png)
 
-Now you have a dataframe that has 3,503 tracks. It contains information about the album, artists, composer, and length of each track.
+Now you have a dataframe that has 3,503 rows. Each row contains  information about a track's album, artists, composer, and length.
 
 
 ### Merging dataframes with outer joins
 
 When merging dataframes, you may want to include rows from one or both dataframes that do not match on the defined columns in each dataframe. This is called at [*outer join*](https://www.freecodecamp.org/news/sql-join-types-inner-join-vs-outer-join-example/).
 
-Consider the Employee and Customer tables in the Chinook database. 
+For example, imagine that we need to create a dataframe that shows the number of customers supported by each employee. 
+
+Consider the Employee and Customer tables in the Chinook database.  
 
 ```python
 customers = pd.read_sql_table('Customer', url)
@@ -326,64 +330,64 @@ print(f"employees columns:  {employees.columns}")
 You see the column names of each dataframe, below:
 
 ```
-customers columns:  Index(['CustomerId', 'FirstName', 'LastName', 'Company', 'Address', 'City',
-       'State', 'Country', 'PostalCode', 'Phone', 'Fax', 'Email',
-       'SupportRepId'],
-      dtype='object')
+customers columns:  Index(['CustomerId', 'FirstName', 'LastName', 'Company', 'Address', 'City', 'State', 'Country', 'PostalCode', 'Phone', 'Fax', 'Email', 'SupportRepId'], dtype='object')
 
-employees columns:  Index(['EmployeeId', 'LastName', 'FirstName', 'Title', 'ReportsTo',
-       'BirthDate', 'HireDate', 'Address', 'City', 'State', 'Country',
-       'PostalCode', 'Phone', 'Fax', 'Email'],
-      dtype='object')
-```
+employees columns:  Index(['EmployeeId', 'LastName', 'FirstName', 'Title', 'ReportsTo', 'BirthDate', 'HireDate', 'Address', 'City', 'State', 'Country', 'PostalCode', 'Phone', 'Fax', 'Email'], dtype='object')
+``` 
 
-First verify if every customer row in the Customer table has a relationship with a Chinook employee. 
+There are no column names that suggest they might provide a match between the two tables. If you were accessing the data using an SQL client or ORM, you could see the Foreign Key relationship between the two database tables. But, because you have read the data the database tables into new dataframes, you do not have an easy way to determine the matching columns. 
 
-The ID numbers in the *customers* dataframe's SupportRepId column match the ID numbers *employees* dataframe's EmployeeId column to create a many-to-one relationship between the *customers* and *employees* dataframes.
-
-Check that every customer has a support representative assigned to them. 
+To find potential matches, display the a few rows of each dataframe.
 
 ```python
-test = customers.loc[customers['SupportRepId'].isnull()] 
-print(len(test))
-```
-```
-0
+display(customers.sample(2))
+display(employees.sample(2))
 ```
 
-We see zero customers have a null, or "NaN", value in their *SupportRepId* column. So, we can place the *customers* dataframe on the right side of the merge function and perform a *left outer join*.
+You can see in the output that the ID numbers in the *customers* dataframe's SupportRepId column match the ID numbers *employees* dataframe's EmployeeId column to create a many-to-one relationship between the *customers* and *employees* dataframes.
 
-A merge statement that [executes a left outer join](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html#brief-primer-on-merge-methods-relational-algebra) is shown below. We have to specify the columns used to match from both the left and right dataframes because the columns names are not the same.
+![Customer and Employee data to be merged](./Images/pandas053.png)
+
+A merge statement that [executes an outer join](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html#brief-primer-on-merge-methods-relational-algebra) of the *Customers* and *employees* dataframes is shown below.
 
 ```python
-dataframe = pd.merge(
+df2 = pd.merge(
     employees, 
     customers, 
     left_on='EmployeeId', 
     right_on='SupportRepId',
-    how = 'left'
+    suffixes=['_emp','_cust'],
+    how = 'outer'
 )
 ```
 
-If we do some additional grouping and cleanup of the merged dataframe, and then print it:
+Now, you can do some analysis of the merged data. 
+
+The following code merges the customers and employees dataframes, adds appropriate suffixes to overlapping table names, and groups employees according to the number of customers each supports.
 
 ```python
-dataframe = (
-    employees
-    .merge(customers, left_on='EmployeeId', right_on='SupportRepId', 
-           how = 'left', suffixes=['_emp','_cust'])
-    .groupby(['EmployeeId','LastName_emp', 'FirstName_emp', 'Title'], 
+df2 = (
+    df2
+    .groupby(['EmployeeId','LastName_emp', 
+              'FirstName_emp', 'Title'], 
              as_index=False, dropna=False)['CustomerId']
     .count()
     .rename(columns = {'CustomerId':'Num_Customers'})
 )
-dataframe['Employee_Name'] = (
-    dataframe['FirstName_emp'] + ' ' + dataframe['LastName_emp']
-)
-dataframe = dataframe.drop(['FirstName_emp', 'LastName_emp'], axis=1)
-dataframe = dataframe[['EmployeeId', 'Employee_Name', 'Title', 'Num_Customers']]
+```
 
-print(dataframe.to_string(index=False))
+From the grouped dataframe, combine the employee name columns into one and re-orders the columns in the dataframe so the presentation is clear.
+
+```python
+df2['Employee_Name'] = (
+    df2['FirstName_emp'] + ' ' + df2['LastName_emp']
+)
+
+df2 = df2.drop(['FirstName_emp', 'LastName_emp'], axis=1)
+
+df2 = df2[['EmployeeId', 'Employee_Name', 'Title', 'Num_Customers']]
+
+print(df2.to_string(index=False))
 ```
 
 We see the following output:
@@ -402,7 +406,110 @@ We see the following output:
 
 Now all the employees records are in the dataframe that was grouped so we see that five employees supported no customers. This makes sense when you look at the employees' titles.
 
-## The *read_sql_query* method
+## The *read_sql_query* function
+
+When working with large amounts of data, you may prefer to perform most of your data join, grouping, and filter operations operations on the database server instead of locally on your PC. The Pandas *read_sql_query* enables you to send an SQL query to the database and then load the selected data into a dataframe.
+
+### Selecting data
+
+To select data from the SQL database, you need to create an SQL query statement using the [SQL language](https://en.wikipedia.org/wiki/SQL). For example, an SQL statement that selects all the columns in a table looks like the following:
+
+```sql
+SELECT * FROM Album
+```
+
+To use that statement with Pandas, run the following code:
+
+```python
+statement = "SELECT * FROM Album"
+
+albums = pd.read_sql_query(statement, url)
+print(albums.shape)
+print(albums.sample(4))
+```
+
+The output shows a random sample of four rows from the *albums* dataframe, which contains the entire contents, 347 rows, of the *Album* table.
+
+```
+(347, 3)
+     AlbumId                        Title  ArtistId
+78        79       In Your Honor [Disc 1]        84
+23        24               Afrociberdelia        18
+195      196  Retrospective I (1974-1980)       128
+218      219                     Tangents       143
+```
+
+### Filtering data
+
+One of the benefits of using SQL queries is that you can select a subset of data to read into your dataframe. This is more efficient than reading in all the data from a table and then using Pandas to remove data you don't need.
+
+For example, if you only need a list four random Album titles from the Album table, select only data from the Title column and limit the number of returned rows to four:
+
+```python
+statement = 'SELECT "Album"."Title" FROM Album ORDER BY random() LIMIT 4'
+
+albums = pd.read_sql_query(statement, url)
+print(albums.shape)
+print(albums)
+```
+
+The output shows that the *albums* dataframe now contains only four rows of album titles so we do not need to perform any additional Pandas operations to reduce the data to only what we need.
+
+```
+(4, 1)
+                                       Title
+0  Beethoven: Symphony No. 6 'Pastoral' Etc.
+1                           Live After Death
+2                               Supernatural
+3            Vinícius De Moraes - Sem Limite
+```
+
+### Joining tables into one dataframe
+
+Another benefit is that, when working with large databases, you can join tables and clean data more efficiently on the SQL server because SQL is optimized for these kinds of operations.
+
+SQL query statements can select specific columns from tables, filter returned rows based on your criteria, join tables, rename columns, and more. For example, the query below merges data from the Album, Artist, and Track tables and then returns only the tracks performed by the artist named "Alanis Morissette":
+
+```python
+statement = """
+SELECT 
+"Track"."Name" AS "Track_Name", 
+"Album"."Title" AS "Album_Title", 
+"Artist"."Name" AS "Artist_Name", 
+"Track"."Composer" AS "Track_Composer", 
+"Track"."Milliseconds" AS "Track_Length", 
+"Track"."UnitPrice" AS "Track_Price" 
+FROM "Album" 
+JOIN "Track" ON "Album"."AlbumId" = "Track"."AlbumId" 
+JOIN "Artist" ON "Artist"."ArtistId" = "Album"."ArtistId"
+WHERE
+"Artist"."Name" = "Alanis Morissette"
+"""
+
+df1 = pd.read_sql_query(statement, url)
+display(df1.style.format(thousands=","))
+```
+
+The *df1* dataframe contains only thirteen rows and only the columns needed. each column has been renamed to make it easier to understand the data.
+
+![Data selected by Pandas using an SQL query](./Images/pandas054.png)
+
+# Conclusion
+
+By now, you have learned enough to read data from an SQL database into a Pandas dataframe by either asking Pandas to read entire tables from a database and operating on them locally on your PC, or by asking Pandas to send an SQL query to the database and read the results into a dataframe. You are ready to learn more about Pandas and start analyzing your data.
+
+I recommend using SQL queries to select the data from the database that is to be read into aPandas dataframe. The SQL language is relatively simple to learn and easy to use for simple queries and joins. But, as queries get more complex, you may want to use the SQLAlchemy ORM to build the SQL statements used by the Pandas *read_sql_query* function.
+
+To use the SQLAlchemy ORM, you first need to learn how to map a database's schema into the ORM or how to define the mappings explicitly in Python code. Then, you need to learn how to use SQLAlchemy functions to build queries that select data from the database. We will cover these
+
+
+
+
+
+
+The *read_sql_query* function can also use query statements created by the SQLAlchemy ORM. SQLAlchemy is an Object Relational Mapper (ORM) tool that translates Python classes to tables on relational databases and automatically converts function calls to SQL statements. SQLAlchemy provides a standard interface that allows developers to create database-agnostic code to communicate with a wide variety of database engines. [^1]
+
+[^1]: From https://auth0.com/blog/sqlalchemy-orm-tutorial-for-python-developers/ on March 23, 2023
 
 
 
@@ -420,6 +527,16 @@ Now all the employees records are in the dataframe that was grouped so we see th
 
 
 
+
+
+
+### Why use an ORM to generate query statements?
+
+The SQL language is relatively simple to learn and easy to use for simple queries and joins. But, as queries get more complex, you may start using the SQLAlchemy ORM to build the SQL statements used by the Pandas *read_sql_query* function.
+
+When working with large and complex databases, users must ensure their SQL statements are optimized. Unoptimized queries can produce the same data but use up significantly more resources producing that data than optimized queries. The SQLAlchemy ORM will produce query statements using industry standard optimizations.
+
+Finally, different SQL servers support variations on the SQL language so an SQL statement that works on SQLite might not work on Microsoft SQL Server. The SQLAlchemy ORM can be easily configured to create different SQL statements for different SQL databases. The Python programmer may invest her time learning SQLAlchemy instead of multiple SQL language dialects.
 
 
 # Build an SQLAlchemy model from an existing database
@@ -428,7 +545,7 @@ The SQLAlchemy ORM defines database tables as classes. The process of automatica
 
 > **NOTE:** Instead of using reflection, it is better to use [Declarative Mapping](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html) to build SQLAlchemy ORM classes. It enables program maintainers to see the database information expressed in Python code. It also makes a program more robust, because you will be better able to predict the impact that changes in the database schema will have on your program. See *Appendix A* for more information. However, Declarative Mapping requires you to learn more about the ORM than we can cover in this document. So, we use reflection in our example.
 
-First, create a connection to the database Start a new Jupyter Notebook. In the first cell, enter the following code to prepare a connection to the database.
+First, create a connection to the database:
 
 ```python
 from sqlalchemy import create_engine
@@ -436,11 +553,11 @@ from sqlalchemy import create_engine
 engine = create_engine(r"sqlite:///C:/Users/blinklet/Documents/chinook-database/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite")
 ```
 
-Run the cell. The code will create an [engine](https://docs.sqlalchemy.org/en/20/core/engines_connections.html) object which includes a connection to the database specified in the URL passed to the *create_engine* function.
+The code will create an [engine](https://docs.sqlalchemy.org/en/20/core/engines_connections.html) object which includes a connection to the database specified in the URL passed to the *create_engine* function.
 
 You are now ready to get information from the database connection.
 
-To automatically generate an object model from the Chinook database, add a new cell to your Jupyter notebook, and enter and run the following code:
+To automatically generate an object model from the Chinook database, run the following code:
 
 ```python
 from sqlalchemy.ext.automap import automap_base
@@ -595,7 +712,7 @@ After looking at all the information output, you should be able to draw a diagra
 
 ## Assign table classes
 
-So that you can more easily use the reflected tables, assign each SQLAlchemy ORM class to a variable so it is easier to work with. Create a new Jupyter Notebook cell and run the following code:
+So that you can more easily use the reflected tables, assign each SQLAlchemy ORM class to a variable so it is easier to work with. Run the following code:
 
 ```python
 Album = Base.classes.Album
@@ -1913,7 +2030,7 @@ You created a new objected named *inspector* that contains You should see the ou
 
 You know the connection works because you were able to get the list of table names. Now, let's find out some more information about the database.
 
-Since the inspect function outputs data as iterables, we will use Python's pretty print module, *pprint*, to display inspection results. Create a new cell and enter the following code: 
+Since the inspect function outputs data as iterables, we will use Python's pretty print module, *pprint*, to display inspection results. Enter the following code: 
 
 
 ```python
@@ -1954,7 +2071,7 @@ The output should look like the listing below:
 {'constrained_columns': ['AlbumId'], 'name': None}
 ```
 
-You can write a program that maps the tables, columns, and relationships in the database schema by iterating through the *inspection* object's attributes. Enter the code shown below into a new cell:
+You can write a program that maps the tables, columns, and relationships in the database schema by iterating through the *inspection* object's attributes. Enter the code shown below:
 
 ```python
 for table_name in inspector.get_table_names():
@@ -1992,7 +2109,7 @@ for table_name in inspector.get_table_names():
     print()
 ```
 
-Run the cell. The output is a long list showing information about each table. We show a subset of the output, below, showing tables *PlaylistTrack* and *Track*:
+The output is a long list showing information about each table. We show a subset of the output, below, showing tables *PlaylistTrack* and *Track*:
 
 ```
 Table = PlaylistTrack
