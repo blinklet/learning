@@ -175,3 +175,6 @@ ipython_config.py
 
 # Ignore trash folders
 Trash/
+
+*.doc
+*.docx
