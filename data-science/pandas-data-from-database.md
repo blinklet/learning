@@ -151,6 +151,10 @@ You may encounter a "chicken and egg" situation where you want to use Pandas to 
 It is best to find the database documentation, if it is available. If not, you can research the SQL statement that will list the database table names. The statement syntax is different for different databases. For a SQLite database, the command is:
 
 ```python
+import pandas as pd
+
+url = r"sqlite:///C:/Users/blinklet/Documents/Chinook_Sqlite.sqlite"
+
 statement = 'SELECT name FROM sqlite_master WHERE type= "table"'
 
 tables = pd.read_sql_query(statement, url)
@@ -188,12 +192,14 @@ artists = pd.read_sql_table('Artist', url)
 tracks = pd.read_sql_table('Track', url)
 ```
 
-## Joining dataframes in Pandas
+## Merging dataframes in Pandas
 
 To get more interesting data sets, we need to [join database tables](https://learnsql.com/blog/how-to-join-tables-sql/). For now, we will accomplish this by reading different tables into Pandas dataframes and [merging the dataframes](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html). 
 
 
-If you look at the columns in the dataframes you created, you see that there may be a relationship between each of the tables that you read into dataframes. Print the output of each dataframes *columns* attribute:
+If you look at the columns in the dataframes you created, you see that there may be a relationship between each of the tables that you read into dataframes. 
+
+Print the output of each dataframes *columns* attribute:
 
 ```python
 print(albums.columns)
@@ -246,7 +252,7 @@ Pandas does not know about the relationships between the tables in the database.
 
 Pandas dataframes have a [*merge()* method](https://www.w3schools.com/python/pandas/ref_df_merge.asp) that works the same as the Pandas *merge()* function with the calling dataFrame being considered the left side in the join.
 
-You can chain multiple *merge()* methods together to join multiple dataframes in one statement. But you have to be careful about overwriting columns that have the same name. In this case, the dataframes have more than one columns with the same names and it confuses Pandas. So, specify the column that each merge should match on.
+You can chain multiple *merge()* methods together to join multiple dataframes in one statement. But you have to be careful if you have multiple columns that have the same name, as you get in this case. Pandas will return only the rows that match in all columns with same names. To avoid this problem, specify the single column that each merge should match on.
 
 ```python
 df1 = albums.merge(artists, on='ArtistId').merge(tracks, on='AlbumId')
@@ -255,15 +261,17 @@ print(df1.shape)
 display(df1.head(3))
 ```
 
+You can see we had two columns with the column name *Name* that were automatically renamed by Pandas to prevent confusion.
+
 ![Pandas merging multiple dataframes](./Images/pandas051.png)
 
-You can see we had two columns with the column name *Name* that were automatically renamed by Pandas to prevent confusion. By default, Pandas uses the "_x" and "_y" suffixes to rename merged columns with the same name. If you want to use other suffixes, you can specify them as parameters when you call the *merge()* method.
+ By default, Pandas uses the "_x" and "_y" suffixes to rename merged columns with the same name. If you want to use other suffixes, you can specify them as parameters when you call the *merge()* method.
 
 ```python
 df1 = (
     albums
     .merge(artists, on='ArtistId')
-    .merge(tracks, on='AlbumId', suffixes=['_artist','_album'])
+    .merge(tracks, on='AlbumId', suffixes=['_artist','_track'])
 )
 print(df1.shape)
 display(df1.head(3))
@@ -332,7 +340,7 @@ You can see in the output that the ID numbers in the *customers* dataframe's Sup
 
 ![Customer and Employee data to be merged](./Images/pandas053.png)
 
-A merge statement that [executes an outer join](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html#brief-primer-on-merge-methods-relational-algebra) of the *customers* and *employees* dataframes is shown below.
+Using this information, you can create a Pandas merge statement that [executes an outer join](https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html#brief-primer-on-merge-methods-relational-algebra) of the *customers* and *employees* dataframes. The following code merges the *customers* and *employees* dataframes, adds appropriate suffixes to overlapping table names:
 
 ```python
 df2 = pd.merge(
@@ -345,9 +353,7 @@ df2 = pd.merge(
 )
 ```
 
-Now, you can analyze the merged data. 
-
-The following code merges the *customers* and *employees* dataframes, adds appropriate suffixes to overlapping table names, and groups employees according to the number of customers each supports.
+All the employees records are in the merged dataframe whether or not customers' *SupportRepId* fields match their *EmployeeId* field. Now, you can analyze the merged data.  Group employees and count the number of customers each employee supports.
 
 ```python
 df2 = (
@@ -360,17 +366,14 @@ df2 = (
 )
 ```
 
-From the grouped dataframe, combine the employee name columns into one and re-orders the columns in the dataframe so the presentation is clear.
+Organize the grouped dataframe so it is more presentable. Combine the employee name columns into one and re-order the columns in the dataframe.
 
 ```python
 df2['Employee_Name'] = (
     df2['FirstName_emp'] + ' ' + df2['LastName_emp']
 )
-
 df2 = df2.drop(['FirstName_emp', 'LastName_emp'], axis=1)
-
 df2 = df2[['EmployeeId', 'Employee_Name', 'Title', 'Num_Customers']]
-
 print(df2.to_string(index=False))
 ```
 
@@ -388,11 +391,11 @@ We see the following output:
           8   Laura Callahan            IT Staff              0
 ```
 
-Now all the employees records are in the dataframe that was grouped so we see that five employees supported no customers. This makes sense when you look at the employees' titles.
+We see that five employees supported no customers. This makes sense when you look at the employees' titles.
 
 ## The *read_sql_query* function
 
-When working with large amounts of data, you may prefer to perform most of your data join, grouping, and filter operations on the database server instead of locally on your PC. The Pandas *read_sql_query* enables you to send an SQL query to the database and then load the selected data into a dataframe.
+When working with large amounts of data, you may prefer to perform most of your data joins, grouping, and filter operations on the database server instead of locally on your PC. The Pandas *read_sql_query* enables you to send an SQL query to the database and then load the selected data into a dataframe.
 
 ### Selecting data
 
@@ -425,9 +428,9 @@ The output shows a random sample of four rows from the *albums* dataframe, which
 
 ### Filtering data
 
-One of the benefits of using SQL queries is that you can select a subset of data to read into your dataframe. This is more efficient than reading in all the data from a table and then using Pandas to remove data you don't need.
+When you use SQL queries in Pandas, you can select a smaller subset of data to read into your dataframe. This is more efficient than reading in all the data from a table and then using Pandas to remove data you don't need.
 
-For example, if you only need a list four random Album titles from the Album table, select only data from the Title column and limit the number of returned rows to four:
+For example, if you only need a list four random Album titles from the Album table, select only data from the *Title* column and limit the number of returned rows to four:
 
 ```python
 statement = """
@@ -477,15 +480,15 @@ df1 = pd.read_sql_query(statement, url)
 display(df1.style.format(thousands=","))
 ```
 
-The *df1* dataframe contains only thirteen rows and only the columns needed. each column has been renamed to make it easier to understand the data.
+The *df1* dataframe contains only thirteen rows and only the columns needed. Each column has been renamed to make it easier to understand the data.
 
 ![Data selected by Pandas using an SQL query](./Images/pandas054.png)
 
 # Conclusion
 
-By now, you have learned enough to read data from an SQL database into a Pandas dataframe. You can use Pandas to read entire tables from a database and operating on them locally on your PC, or you can use Pandas to send an SQL query to the database and read the results into a dataframe. 
+You have learned enough to read data from an SQL database into a Pandas dataframe. You can use Pandas to read entire database tables into dataframes, then operate on them locally on your PC. You can also use Pandas to send an SQL query to the database and read the results into a dataframe. 
 
-I recommend using SQL queries to select the data from the database that is to be read into a Pandas dataframe. The SQL language is relatively simple to learn and easy to use for simple queries and joins. But, as queries get more complex, you may want to use the [SQLalchemy ORM](https://www.sqlalchemy.org/SQLAlchemy) to build the SQL statements used by the Pandas *read_sql_query* function.
+I recommend using SQL queries to select the data from the database before reading it into a Pandas dataframe. The SQL language is relatively simple to learn for simple queries and joins. But, as queries get more complex, you may want to use the [SQLalchemy ORM](https://www.sqlalchemy.org/SQLAlchemy) to build the SQL statements used by the Pandas *read_sql_query* function.
 
 In the next document, I will describe how to use SQLAlchemy ORM to automatically build a Python object model that represents an existing database and to create SQL statements that can be used by Pandas to read selected data into dataframes.
 
