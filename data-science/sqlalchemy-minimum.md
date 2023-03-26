@@ -22,14 +22,13 @@ Different SQL servers support variations on the SQL language so an SQL statement
 
 Finally, Python programmers may prefer to use SQLAlchemy to create query statements because it allows them to use Python code to express database queries and, if they want to explore more advanced uses of SQLAlchemy, the database schema.
 
-## What you will learn about SQLAlchemy
+## The minimum you need to know about SQLAlchemy
 
-The best way to learn is to by working through practical examples. This document covers the following topics with step-by-step tutorials:
+If you analyze data, all you need to know is how to read data from an existing database. This is a small sub-set of SQLAlchemy functionality and it easy to learn by working through a few practical examples. This document covers the following topics with step-by-step tutorials:
 
 * How to install SQLAlchemy
 * How to connect SQLAlchemy to an existing database
 * How to make SQLAlchemy read the database schema and automatically convert it into mapped Python objects
-* Understand the objects that SQLAlchemy creates
 * Learn the SQLAlchemy functions that create SQL queries
 * Integrate the SQLAlchemy queries into Pandas functions to get data from the database
 
@@ -42,15 +41,46 @@ Before you get started using SQLAlchemy, you need to know a little bit about eac
 * The basics of working with data in Pandas. I covered this in my previous document, "Reading database tables into pandas dataframes"
 
 
-# Install SQLAlchemy
+# Install SQLAlchemy and other packages
 
-Install SQLAlchemy in the same virtual environment in which you already installed Pandas. Activate the virtual environment. Then, install SQLAchemy with the following command.
+Install SQLAlchemy in the same virtual environment in which you already installed Pandas. If you have not already created a Python virtual environment, run the folloing commands to create one in the same folder in which you will save your Jupyter notebook files:
+
+```powershell
+> cd data-science-folder
+> python -m venv env
+> .\env\Scripts\activate
+(env) > 
+```
+
+Then, install SQLAchemy with the following command.
 
 ```powershell
 (env) > pip install SQLAlchemy
 ```
 
+## Database drivers
+
 If you are using a database driver other than [SQLite](https://www.sqlite.org/index.html), which is built into Python, you will have to install it. Other database drivers include [psycopg](https://www.psycopg.org/) for PostgreSQL, or [mysql-connector-python](https://dev.mysql.com/doc/connector-python/en/) for MySQL.
+
+## Pandas and Jupyter Notebooks
+
+If you did not already install Pandas and Jupyter when you followed the tutorials in the "Reading database tables into pandas dataframes" document, install them now:
+
+```powershell
+(env) > pip install pandas
+(env) > pip install openpyxl xlsxwriter xlrd
+(env) > pip install jupyterlab
+```
+
+This document uses a [Jupyter notebook](https://jupyter.org/) as an advanced [REPL](https://codewith.mu/en/tutorials/1.0/repl) that makes it easier to demonstrate the Python code used to access data from a database and display the results. Create a new Jupyter notebook and start it using the commands below:
+
+```powershell
+(env) > create-notebook my_notebook
+(env) > jupyter notebook my_notebook.ipynb
+```
+
+If you prefer to use a simple text editor or another REPL, you can still follow along with this tutorial.
+
 
 # Database and documentation
 
@@ -58,22 +88,21 @@ You need a database that is usable for practice. Use the [SQLite](https://www.sq
 
 [Download the *Chinook_Sqlite.sqlite* file](https://github.com/lerocha/chinook-database/blob/master/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite) from the Chinook Database project's [downloads folder](https://github.com/lerocha/chinook-database/tree/master/ChinookDatabase/DataSources) and save it to a folder your computer.
 
-You need information about the database schema, specifically the relationships between tables. It is also helpful to know the datatypes in table columns. Read the database documentation, or analyze the database with an SQL discovery tool like [*SchemaSpy*](https://schemaspy.org/) or [*SchemaCrawler*](https://www.schemacrawler.com/). 
+You need information about the database schema, specifically the relationships between tables. Read the database documentation or analyze the database with an SQL discovery tool like [*SchemaSpy*](https://schemaspy.org/) or [*SchemaCrawler*](https://www.schemacrawler.com/). Another way is to use the [SQLAlchemy *inspection* module](https://docs.sqlalchemy.org/en/20/core/inspection.html#module-sqlalchemy.inspection) to gather information and use it to draw your own diagram. The *inspection* module is described in *Appendix A*.
 
->**NOTE:** You can use SQLAlchemy to derive the database schema information. To do this, you need to learn about the information stored in the SQLAlchemy ORM objects created when you automatically convert the database schema into mapped Python objects. This is a more advanced topic and is not covered in this document. 
+>**NOTE:** You can use the classes in the SQLAlchemy ORM to derive the database schema information. This is a good exercise because it will help you learn about the information stored in the SQLAlchemy ORM objects created when you automatically convert the database schema into mapped Python objects. This is a more advanced topic and is not covered in this document. 
 
 The Chinook database diagram, created by SchemaSpy, is shown below:
 
 ![Chinook database diagram showing table relationships](./Images/chinook-diagram-03.png)
 
-
-
+The diagram shows the database tables, the columns in each table, each table's primary key, and the columns that are foreign keys that create relationships between tables.
 
 # Create a database connection
 
-Create the [database URL](https://dev.to/chrisgreening/connecting-to-a-relational-database-using-sqlalchemy-and-python-1619#deconstructing-the-database-url) that tells SQLAlchemy the driver to use, the location of the database, and (optionally) how to authenticate access to the database. The URL may be as simple as the string shown below, which simply contains the name of the SQLite driver, *sqlite* and the path to the SQLite file on my computer disk. Or, it may involve an internet address and access credentials.
+Create the [database URL](https://dev.to/chrisgreening/connecting-to-a-relational-database-using-sqlalchemy-and-python-1619#deconstructing-the-database-url) that tells SQLAlchemy which database driver to use, the location of the database, and how to authenticate access to it. The URL may be as simple as the string shown below, which simply contains the name of the SQLite driver, *sqlite*, and the path to the SQLite file on my computer disk. Or, it may involve an internet address and access credentials.
 
-Enter the following Python code into your Jupyter notebook or text editor and run it:
+Enter the following Python code into a Jupyter notebook cell or text editor and run it:
 
 ```
 url = r"sqlite:///C:/Users/blinklet/Documents/Chinook_Sqlite.sqlite"
@@ -87,13 +116,13 @@ from sqlalchemy import create_engine
 engine = create_engine(url)
 ```
 
-You are now ready to get information from the database connection. You will use the *engine* object everywhere in your program you need to specify the connection.
+You are now ready to get information from the database connection. You will use the *engine* object in your program when you need to specify the connection.
 
-# Build an SQLAlchemy model from an existing database
+# Build an SQLAlchemy model
 
-The SQLAlchemy ORM defines database tables as classes. The process of automatically building new classes based on an existing database schema is called [reflection](https://betterprogramming.pub/reflecting-postgresql-databases-using-python-and-sqlalchemy-48b50870d40f). If you start with a properly designed database, you can map classes and relationships using the [SQLAlchemy Automap extension](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html). Database reflection is useful when writing simple, single-use scripts like the ones in this document.
+The SQLAlchemy ORM defines database tables as classes. The process of automatically building new classes based on an existing database's schema is called [reflection](https://betterprogramming.pub/reflecting-postgresql-databases-using-python-and-sqlalchemy-48b50870d40f). If you start with a properly designed database, you can automatically map classes and relationships with the [SQLAlchemy Automap extension](https://docs.sqlalchemy.org/en/20/orm/extensions/automap.html). Database reflection is useful when writing simple, single-use scripts like the ones in this document.
 
-> **NOTE:** Instead of using reflection, it is better to use [Declarative Mapping](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html) to manually build SQLAlchemy ORM classes. the code describing these classes enables program maintainers to see the database information expressed in Python code. It also makes a program more robust, because you will be better able to predict the impact that changes in the database schema will have on your program. We leave Declarative Mapping for your future consideration.
+> **NOTE:** Instead of using reflection, The SQLAlchemy documentation recommends you use [Declarative Mapping](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html) to manually build SQLAlchemy ORM classes as Python classes. The code you write that describes these classes enables other program maintainers to see the database information expressed in Python code. It also makes a program more robust, because you will be better able to predict the impact that changes in the database schema will have on your program. When working with an existing database you may us the *[sqlacodegen](https://github.com/agronholm/sqlacodegen)* tool to read the structure of an existing database and generate Python code describing SQLAlchemy declarative mapping classes. We leave Declarative Mapping for your future consideration. 
 
 ## Automap the ORM
 
@@ -136,12 +165,14 @@ Notice that we assigned the *playlisttrack* variable name to the *PlaylistTrack*
 
 # Generating SQL statements in SQLAlchemy
 
+SQLAlchemy has functions that support interacting with a database. Since we are only interested in reading data from the, we will cover some examples using the *select()* function and the methods.
 
 
+## Reading data with the *select()* function
 
-## Select
+Use the SQLAlchemy [*select()* function](https://docs.sqlalchemy.org/en/20/tutorial/data_select.html) to create SQL SELECT statements and that read rows from tables in the database. The *select()* function returns an instance of the SQLAlchemy Select class that offers methods that can be chained together to provider all the information the Select object needs to output a query when requested by Pandas, or when executed as part of other functions like Python's *print()* function.
 
-Use the SQLAlchemy [*select()* function](https://docs.sqlalchemy.org/en/20/tutorial/data_select.html) to create SQL SELECT statements and that read rows from tables in the database. Use the SQLAlchemy guides, [*Using Select Statements*](https://docs.sqlalchemy.org/en/20/tutorial/data_select.html) and [*ORM Querying Guide*](https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html) as references when you need to look up additional methods that solve specific problems.
+This section covers some common uses of the *select()* function and its methods. Use the SQLAlchemy guides, [*Using Select Statements*](https://docs.sqlalchemy.org/en/20/tutorial/data_select.html) and [*ORM Querying Guide*](https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html) as references when you need to look up additional methods to build the SQL queries you need.
 
 The following code builds an SQL query that selects all rows in the Chinook database's *Album* table. 
 
@@ -193,12 +224,12 @@ The output below shows all 275 rows from the *Artist* database table are in the 
 4         5    Alice In Chains
 ```
 
-## Filtering with the *select().where* method
+## Filtering with the *where* method
 
-If you want to get only data about the artist named "Alice in Chains", add the *where()* method to the *Select()* function. 
+If you want to get only data about the artist named "Alice in Chains", add the *where()* method to the instance returned by the *Select()* function. 
 
 ```python
-statement = (select(Artist).where(Artist.Name=='Alice In Chains'))
+statement = select(Artist).where(Artist.Name=='Alice In Chains')
 print(statement)
 ```
 
@@ -210,7 +241,7 @@ FROM "Artist"
 WHERE "Artist"."Name" = :Name_1
 ```
 
-The Select object that returned the above SQL statement knows that the ":Name_1" variable is "Alice in Chains". When you pass the statement variable into the Pandas *read_sql_query* function, it creates the correct query.
+The Select object that returned the above SQL statement knows that the ":Name_1" variable is "Alice in Chains". When you pass the statement variable into the Pandas *read_sql_query* function, it creates the correct query for the SQL dialect used by the database.
 
 >**NOTE:** If you want to see the actual query, use the SQLAlchemy *compile* function along with the database driver to output the exact SQL statement that is generated by the *statement* object. For example:
 >
@@ -231,7 +262,7 @@ The Select object that returned the above SQL statement knows that the ":Name_1"
 >WHERE "Artist"."Name" = 'Alice In Chains'
 >```
 
-Use the new *statement* object with Pandas to read only the data you requested into a dataframe:
+Use the new *statement* object with Pandas to read the data you requested into a dataframe:
 
 ```python
 dataframe = pd.read_sql_query(sql=statement, con=engine)
@@ -240,7 +271,7 @@ print(dataframe.shape)
 print(dataframe.head(5))
 ```
 
-This returned only one row, the row containing the artist named "Alice In Chains"
+This returned only one row: the row containing the artist named "Alice In Chains"
 
 ```
 (1, 2)
@@ -248,13 +279,13 @@ This returned only one row, the row containing the artist named "Alice In Chains
 0         5  Alice In Chains
 ```
 
-If you have data sets that are very large, you can imagine how important it can be to filter data before it is loaded into a pandas dataframe.
+If you have very large data sets, you can imagine how useful it can be to filter data before it is loaded into a pandas dataframe.
 
 ## Chaining *select()* function methods
 
-You can use other methods to perform more complex queries and you can chain methods together similar to the way you can chain methods in Pandas.
+You can use other methods to perform more complex queries and you can chain instance methods together similar to the way you can chain methods in Pandas.
 
-For example, if you want to sort the names in the Artist table in alphabetical order and then read the first five rows into a Pandas dataframe, use the *select()* function's *order_by()* and *limit()* methods. Run the following code:
+For example, if you want to sort the names in the Artist table in alphabetical order and then read the first five rows into a Pandas dataframe, use the *order_by()* and *limit()* methods. Run the following code:
 
 ```python
 statement = (
@@ -280,7 +311,7 @@ You can see below that only five rows were returned and the rows were sorted alp
 4       214  Academy of St. Martin in the Fields & Sir Nevi...
 ```
 
-## SQL Functions
+## SQL Functions using the *func()* method
 
 The SQAlchemy *func()* function has many methods that provide standard SQL functions. 
 
@@ -294,10 +325,11 @@ statement = (
 
 rand_artists = pd.read_sql_query(sql=statement, con=engine)
 print(rand_artists.shape)
-print(rand_artists.head(5))
+print(rand_artists)
 ```
 
-The output shows 
+The output shows five rows were read at random from the database and loaded into the *rand_artists* dataframe.
+
 ```
 (5, 2)
    ArtistId                                               Name
@@ -308,11 +340,11 @@ The output shows
 4       232                  Sergei Prokofiev & Yuri Temirkano
 ```
 
-## Joining tables using *select()* methods
+## Joining tables using *join()* methods
 
-To create the dataframe containing album and track information from the Chinook database, use the *select()* function's *join()* or *join_from()* methods to create SQL JOIN statements.
+To create a dataframe containing album and track information from the Chinook database, use the *select()* function's *join()* or *join_from()* methods to join the *Album* and *Track* tables.
 
-In a properly-designed database like teh Chinook database, the relationships between tables are already defined using primary and foreign keys, and association tables. SQLAlchemy objects can use these relationships to automatically join data in different tables together even if the column that form the relationship have different names.
+In a well-designed database like the Chinook database, the relationships between tables are already defined by primary and foreign keys, and association tables. SQLAlchemy objects can use these relationships to automatically join data in different tables together even if the column that form the relationship have different names.
 
 In the Chinook database diagram above, look at the relationships between the tables named *Album*, *Track*, and *Artist*. The *Album* table has a foreign key that points to the *Artist* table and the *Track* table has a foreign key that points to the *Album* table.
 
@@ -558,7 +590,211 @@ Unlike the version of this example where we merged Pandas dataframes, we did not
 
 
 
+# Appendix A: Exploring the database schema using the *inspection* module
 
+One way to learn about the structure of an existing database is to use the [SQLAlchemy *inspect* module](https://docs.sqlalchemy.org/en/20/core/inspection.html#module-sqlalchemy.inspection). The *inspect* module provides a simple interface to read database schema information via a Python API. 
+
+After establishing a connection to the database and generating an *engine* object, create an *inspector* object using SQLAlchemy's *inspect* function. 
+
+```python
+from sqlalchemy import inspect
+
+inspector = inspect(engine)
+```
+
+You created a new objected named *inspector* that contains all the information you need about the database structure. 
+
+## Table names
+
+Use the *inspector* object's *get_table_names()* method to list the tables in the database.
+
+```python
+print(inspector.get_table_names())
+```
+
+You should see the output displayed as a list containing the table names in the Chinook database.
+
+```
+['Album', 'Artist', 'Customer', 'Employee', 'Genre', 'Invoice', 'InvoiceLine', 'MediaType', 'Playlist', 'PlaylistTrack', 'Track']
+```
+
+## Column details
+
+The *inspect()* function returns an iterable so you can use Python's "pretty print" module, *pprint*, to display inspection results. To see details about a table's columns and primary key, enter the following code: 
+
+
+```python
+from pprint import pprint
+
+pprint(inspector.get_columns("Album"))
+```
+
+When you run the code, you see that the *get_columns()* method returns a list of dictionaries which contain information about each column in the table. "Album". 
+
+```python
+[{'autoincrement': 'auto',
+  'default': None,
+  'name': 'AlbumId',
+  'nullable': False,
+  'primary_key': 1,
+  'type': INTEGER()},
+ {'autoincrement': 'auto',
+  'default': None,
+  'name': 'Title',
+  'nullable': False,
+  'primary_key': 0,
+  'type': NVARCHAR(length=160)},
+ {'autoincrement': 'auto',
+  'default': None,
+  'name': 'ArtistId',
+  'nullable': False,
+  'primary_key': 0,
+  'type': INTEGER()}]
+```
+
+You can see which column is the primary key column by looking at the *primary_key* item in each column dictionary. If the number is larger than zero, the column is a private key. Remember that association tables have two or more primary keys so, if there are two private keys, one private key value will be "1" and the second will be "2".
+
+## Private keys
+
+To see only the private key of a table, use the *get_pk_constraint()* method:
+
+```python
+print(inspector.get_pk_constraint("Album"))
+```
+
+You see the *get_pk_constraint()* method returns a dictionary containing a list of the table's primary keys.
+
+```python
+{'constrained_columns': ['AlbumId'], 'name': None}
+```
+
+## Foreign keys
+
+To see which columns in a table are foreign keys, use the *get_foreign_keys()* method:
+
+```python
+pprint(inspector.get_foreign_keys("Album"))
+```
+
+You can see in the output below that the *Album* table's *ArtistId* column is a foreign key that points to the *ArtistId* column in the *Artist* table:
+
+```python
+[{'constrained_columns': ['ArtistId'],
+  'name': None,
+  'options': {},
+  'referred_columns': ['ArtistId'],
+  'referred_schema': None,
+  'referred_table': 'Artist'}]
+```
+
+## Table inspection function
+
+You can write a Python function named *inspect_table()* that read a table's columns and relationships by iterating through the *inspection* object's attributes. Enter the code shown below:
+
+```python
+def inspect_table(table_name):
+    tbl_out = f"Table = {table_name}\n"
+    
+    col_out = "Columns = "
+    cols_list = inspector.get_columns(table_name)
+    for i, c in enumerate(cols_list, 1):
+        if i < len(cols_list):
+            col_out += (c['name'] + ", ")
+        else:
+            col_out += c['name'] + "\n"
+    
+    pk_out = "Primary Keys = "
+    pk = inspector.get_pk_constraint(table_name)
+    pk_list = pk["constrained_columns"]
+    for i, c in enumerate(pk_list):
+        if i < len(pk_list) - 1:
+            pk_out += (c + ", ")
+        else:
+            pk_out += (c + "\n")  
+    
+    fk_out = ""
+    fk_list = inspector.get_foreign_keys(table_name)
+    if fk_list:
+        fk_out = "Foreign Keys:\n"
+        fk_name_list = []
+        fk_reftbl_list = []
+        fk_refcol_list = []
+        
+        for fk in fk_list:
+            fk_name_list.append(*fk['constrained_columns'])
+            fk_reftbl_list.append(fk['referred_table'])
+            fk_refcol_list.append(*fk['referred_columns'])
+            
+        fk_info = zip(fk_name_list, fk_reftbl_list, fk_refcol_list)
+        
+        for n, t, c in fk_info:
+            fk_out += f"    {n} ---> {t}:{c}\n"
+    
+    return("".join([tbl_out, col_out, pk_out, fk_out]))
+```
+
+Use the inspect_table function to print table relationship information bu passing it a list of table names. 
+
+You can get information about one table by passing it a table name, as shown below:
+
+```python
+print(inspect_table("Album"))
+```
+
+you can see all tables in a database by iterating through the list returned by the *inspector* object's *get_table_names()* method, as shown below. 
+
+```python
+for tbl in inspector.get_table_names():
+    print(inspect_table(tbl))
+```
+
+The output is a long list showing information about each table. We show a subset of the output, below, showing tables *PlaylistTrack* and *Track*:
+
+```
+Table = PlaylistTrack
+Columns = PlaylistId, TrackId
+Primary Keys = PlaylistId, TrackId
+Foreign Keys:
+    TrackId ---> Track:TrackId
+    PlaylistId ---> Playlist:PlaylistId
+
+Table = Track
+Columns = Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, TrackId
+Primary Keys = TrackId
+Foreign Keys:
+    MediaTypeId ---> MediaType:MediaTypeId
+    GenreId ---> Genre:GenreId
+    AlbumId ---> Album:AlbumId
+```
+
+
+To view how tables are linked with relationships in ORM you can use the *inspect* function to look at relationship properties. Here, for example, are the relationships from the point of view of the Album table:
+
+```python
+print(f"Album table relationships")
+print()
+for relationship in inspect(Album).relationships:
+    print(f"Relationship: {relationship}")
+    print(f"Direction:    {relationship.direction}")
+    print(f"Joined Table: {relationship.target}")
+    print()
+```
+
+The output is:
+
+```
+Album table relationships
+
+Relationship: Album.artist
+Direction:    symbol('MANYTOONE')
+Joined Table: Artist
+
+Relationship: Album.track_collection
+Direction:    symbol('ONETOMANY')
+Joined Table: Track
+```
+
+You can use the information gathered from the *inspection* object to draft a database diagram that you can use as a reference when writing select statements for the SQLAlchemy ORM.
 
 
 
