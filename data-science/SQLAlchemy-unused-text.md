@@ -1094,133 +1094,14 @@ You can see how declarative mapping shows you everything you need to know about 
 
 
 
+
+
+
+
 # Appendix B: Exploring the database schema using the *Inspection* module
 
-Another way to learn about the database schema is to use the [SQLAlchemy *inspection* module](https://docs.sqlalchemy.org/en/20/core/inspection.html#module-sqlalchemy.inspection). The benefit of using the *inspection* module over using metadata from the ORM is that the *inspection* module provides simpler interface to schema information than the ORM metadata. 
-
-After establishing a connection to the database:
-
-```python
-from sqlalchemy import create_engine
-
-engine = create_engine(r"sqlite:///C:/Users/blinklet/Documents/chinook-database/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite")
-```
-
-Create an *Inspector* object using SQLAlchemy's *inspect* function. 
-
-```python
-from sqlalchemy import inspect
-
-inspector = inspect(engine)
-
-print(inspector.get_table_names())
-```
-
-You created a new objected named *inspector* that contains You should see the output displayed as a list containing the table names in the Chinook database.
-
-```
-['Album', 'Artist', 'Customer', 'Employee', 'Genre', 'Invoice', 'InvoiceLine', 'MediaType', 'Playlist', 'PlaylistTrack', 'Track']
-```
-
-You know the connection works because you were able to get the list of table names. Now, let's find out some more information about the database.
-
-Since the inspect function outputs data as iterables, we will use Python's pretty print module, *pprint*, to display inspection results. Enter the following code: 
 
 
-```python
-from pprint import pprint
-
-# Columns in table "Album"
-pprint(inspector.get_columns("Album"))
-print()
-
-# Primary Key for table "Album"
-pprint(inspector.get_pk_constraint("Album"))
-```
-
-When you run the code, you see that the *get_columns* method returns a list of dictionaries which contain information about each column in the table. "Album". The you see the *get_pk_constraint* method returns a dictionary containing a list of the table's primary keys.
-
-The output should look like the listing below:
-
-```
-[{'autoincrement': 'auto',
-  'default': None,
-  'name': 'AlbumId',
-  'nullable': False,
-  'primary_key': 1,
-  'type': INTEGER()},
- {'autoincrement': 'auto',
-  'default': None,
-  'name': 'Title',
-  'nullable': False,
-  'primary_key': 0,
-  'type': NVARCHAR(length=160)},
- {'autoincrement': 'auto',
-  'default': None,
-  'name': 'ArtistId',
-  'nullable': False,
-  'primary_key': 0,
-  'type': INTEGER()}]
-
-{'constrained_columns': ['AlbumId'], 'name': None}
-```
-
-You can write a program that maps the tables, columns, and relationships in the database schema by iterating through the *inspection* object's attributes. Enter the code shown below:
-
-```python
-for table_name in inspector.get_table_names():
-
-    print(f"Table = {table_name}")
-    
-    print(f"Columns = ", end="")
-    col_names_list = []
-    for col in inspector.get_columns(table_name):
-        col_names_list.append(col['name'])
-    print(*col_names_list, sep=", ")
-    
-    print(f"Primary Keys = ", end="")
-    pk_list = inspector.get_pk_constraint(table_name)
-    pk_name_list = pk_list["constrained_columns"]
-    print(*pk_name_list, sep=", ")
-
-    fk_list = inspector.get_foreign_keys(table_name)
-    if fk_list:
-        print(f"Foreign Keys:")
-        fk_name_list = []
-        fk_reftbl_list = []
-        fk_refcol_list = []
-        
-        for fk in fk_list:
-            fk_name_list.append(*fk['constrained_columns'])
-            fk_reftbl_list.append(fk['referred_table'])
-            fk_refcol_list.append(*fk['referred_columns'])
-            
-        fk_info = zip(fk_name_list, fk_reftbl_list, fk_refcol_list)
-        
-        for n, t, c in fk_info:
-            print(f"    {n} ---> {t}:{c}")
-
-    print()
-```
-
-The output is a long list showing information about each table. We show a subset of the output, below, showing tables *PlaylistTrack* and *Track*:
-
-```
-Table = PlaylistTrack
-Columns = PlaylistId, TrackId
-Primary Keys = PlaylistId, TrackId
-Foreign Keys:
-    TrackId ---> Track:TrackId
-    PlaylistId ---> Playlist:PlaylistId
-
-Table = Track
-Columns = Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, TrackId
-Primary Keys = TrackId
-Foreign Keys:
-    MediaTypeId ---> MediaType:MediaTypeId
-    GenreId ---> Genre:GenreId
-    AlbumId ---> Album:AlbumId
-```
 
 To view how tables are linked with relationships in ORM you can use the *inspect* function to look at relationship properties. Here, for example, are the relationships from the point of view of the Album table:
 

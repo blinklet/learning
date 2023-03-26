@@ -1,8 +1,8 @@
-% SQLAlchemy and Pandas
+% SQLAlchemy and Pandas: The minimum you need to know
 
 In my previous document, "Reading database tables into pandas dataframes", I showed show you how to use simple SQL queries to read data from a database and load it into Pandas dataframes. To integrate Pandas with larger, more complex databases, you need to master the [SQL language](https://en.wikipedia.org/wiki/SQL) or use a Python library like SQLAlchemy to create SQL query statements.
 
-SQLAlchemy can seem like it has a large learning curve but you only need to learn a little bit about it, if all you want to do is use it to create SQL queries. Many SQLAlchemy books and blog posts are written for web application developers so they show how to create a new database, how to build Python objects that map to new database tables using [Declarative Mapping](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html), and then how to manage SQLAlchemy sessions that write data to the tables. They cover all these topics before they show you how to use SQLAlchemy to read from a database.
+SQLAlchemy can seem like it has a large learning curve but you only need to learn a little bit about it if all you want to do is use it to create SQL queries. Many SQLAlchemy books and blog posts are written for web application developers so they show how to create a new database, how to build Python objects that map to new database tables using [Declarative Mapping](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html), and then how to manage SQLAlchemy sessions that write data to the tables. They cover all these topics before they show you how to use SQLAlchemy to read from a database.
 
 This document covers the minimum you need to know about SQLAlchemy to gather information about an existing database's schema and to build complex, powerful SQL queries that you can use with the Pandas *read_sql_query()* function.
 
@@ -94,7 +94,7 @@ You need information about the database schema, specifically the relationships b
 
 The Chinook database diagram, created by SchemaSpy, is shown below:
 
-![Chinook database diagram showing table relationships](./Images/chinook-diagram-03.png)
+![Chinook database diagram showing table relationships](./Images/chinook-diagram-03.png){width=14cm}
 
 The diagram shows the database tables, the columns in each table, each table's primary key, and the columns that are foreign keys that create relationships between tables.
 
@@ -392,7 +392,7 @@ display(df4.head())
 
 The resulting dataset will look like the following:
 
-![](./Images/pandas008.png)
+![Joined tables loaded into Pandas dataframe](./Images/pandas008.png)
 
 You can see the columns, and the column names assigned by SQLAlchemy where column names overlapped, in the query result. 
 
@@ -417,7 +417,7 @@ SELECT "Album"."Title" AS "Album",
        "Artist"."Name" AS "Artist", 
        "Track"."Name" AS "Track", 
        "Track"."Composer", 
-       "Track"."Milliseconds" AS "Length" 
+       "Track"."Milliseconds" AS "Length(ms)" 
 FROM "Album" 
 JOIN "Track" ON "Album"."AlbumId" = "Track"."AlbumId" 
 JOIN "Artist" ON "Artist"."ArtistId" = "Album"."ArtistId"
@@ -433,7 +433,7 @@ display(dataframe.head().style.format(thousands=","))
 
 The result is shown below:
 
-![](./Images/pandas010.png)
+![Selected columns from joined tables](./Images/pandas010.png)
 
 
 You see that joining tables and selecting specific columns in an SQLAlchemy query can give you the data you need in one step. Reading that data into a Pandas dataframe makes it easy to analyze the results.
@@ -471,7 +471,7 @@ display(dataframe.head(5).style.format(thousands=","))
 
 See that the output looks like that below:
 
-![](./Images/pandas015.png)
+![Selected columns from many tables](./Images/pandas015.png)
 
 
 You used the *join_from()* method to make the left and right sides of each join clearer to the program. normally it can infer the correct relationships but sometimes you need to be more specific.
@@ -497,7 +497,7 @@ display(dataframe.head(5))
 
 The result was a dataframe with 4 columns and 8,715 rows.
 
-![](./Images/pandas016.png)
+![Joining tables with many-to-many relationship](./Images/pandas016.png){width=12cm}
 
 ## Outer joins using the *select()* function
 
@@ -583,18 +583,22 @@ You also performed an outer join so you get all employees grouped in the datafra
           8   Laura Callahan            IT Staff              0
 ```
 
-Unlike the version of this example where we merged Pandas dataframes, we did not need to specify which columns to join on. SQLAlchemy knows the relationships between the Employee and Customer tables because it is defined in the database schema and is now reflected in the SQLAlchemy ORM.
+Unlike when merging Pandas dataframes where one contained information from the Employee table and the other contained information from the Customer table, we did not need to specify which columns to join on. SQLAlchemy knows the relationships between the Employee and Customer tables, even if the matching columns have different names, because it is defined in the database schema and is now reflected in the SQLAlchemy ORM.
 
+# Conclusion
 
+This document showed you the simple ways you can use SQLAlchemy to build SQL queries using Python code, and use those queries to load database information into a Pandas dataframe. You only need to know a little bit about SQLAlchemy to get started. Eventually, you should learn to use SQLAlchemy functions to Declaratively Map your database schema and use database reflection only when doing single-use scripts where performance is not an issue.
 
 
 
 
 # Appendix A: Exploring the database schema using the *inspection* module
 
-One way to learn about the structure of an existing database is to use the [SQLAlchemy *inspect* module](https://docs.sqlalchemy.org/en/20/core/inspection.html#module-sqlalchemy.inspection). The *inspect* module provides a simple interface to read database schema information via a Python API. 
+One way to learn about the structure of an existing database is to use the [SQLAlchemy *inspect* module](https://docs.sqlalchemy.org/en/20/core/inspection.html#module-sqlalchemy.inspection). It provides a simple interface to read database schema information via a Python API. This appendix provides inspection examples that are relevant to users who read data into Pandas dataframes and who need to understand the [relationships](https://blog.devart.com/types-of-relationships-in-sql-server-database.html#self-referencing-relationships) within a database. Inspecting SQLAlchemy [relationship constraints](https://www.digitalocean.com/community/conceptual-articles/understanding-sql-constraints) may be more complex, but constraints are relevant only to users who want to update or delete information in a database so we will not inspect them in this document. See the [SQLAlchemy Inspect documentation](https://docs.sqlalchemy.org/en/20/core/reflection.html#fine-grained-reflection-with-inspector) for more ways to use the *inspect()* module.
 
-After establishing a connection to the database and generating an *engine* object, create an *inspector* object using SQLAlchemy's *inspect* function. 
+## Create an Inspector object
+
+After establishing a connection to the database and generating an *engine* object, as shown earlier in this document, create an [Inspector object](https://docs.sqlalchemy.org/en/20/core/reflection.html#sqlalchemy.engine.reflection.Inspector) using SQLAlchemy's *inspect()* function. 
 
 ```python
 from sqlalchemy import inspect
@@ -602,11 +606,11 @@ from sqlalchemy import inspect
 inspector = inspect(engine)
 ```
 
-You created a new objected named *inspector* that contains all the information you need about the database structure. 
+You created a new Inspector object, named *inspector*, that contains all the information you need about the database structure. 
 
 ## Table names
 
-Use the *inspector* object's *get_table_names()* method to list the tables in the database.
+Use the Inspector object's *get_table_names()* method to list the tables in the database.
 
 ```python
 print(inspector.get_table_names())
@@ -620,7 +624,7 @@ You should see the output displayed as a list containing the table names in the 
 
 ## Column details
 
-The *inspect()* function returns an iterable so you can use Python's "pretty print" module, *pprint*, to display inspection results. To see details about a table's columns and primary key, enter the following code: 
+When the Inspector object instance's methods return iterables, you can use Python's "pretty print" module, *pprint*, to display inspection in a manner that is easier to read. To see details about a table's columns and primary key, enter the following code: 
 
 
 ```python
@@ -629,7 +633,7 @@ from pprint import pprint
 pprint(inspector.get_columns("Album"))
 ```
 
-When you run the code, you see that the *get_columns()* method returns a list of dictionaries which contain information about each column in the table. "Album". 
+When you run the code, you see that the *get_columns()* method returns a list. Each item in the list is a dictionary that contains information about a column in the *Album* table. 
 
 ```python
 [{'autoincrement': 'auto',
@@ -687,12 +691,12 @@ You can see in the output below that the *Album* table's *ArtistId* column is a 
   'referred_table': 'Artist'}]
 ```
 
-## Table inspection function
+## Gathering table relationship information
 
-You can write a Python function named *inspect_table()* that read a table's columns and relationships by iterating through the *inspection* object's attributes. Enter the code shown below:
+To gather all the information you need about table relationships to build a database diagram, write a Python function named *inspect_relationships()* that read a table's columns and relationships by iterating through the *inspection* object's attributes. Enter the code shown below:
 
 ```python
-def inspect_table(table_name):
+def inspect_relationships(table_name):
     tbl_out = f"Table = {table_name}\n"
     
     col_out = "Columns = "
@@ -733,24 +737,81 @@ def inspect_table(table_name):
     return("".join([tbl_out, col_out, pk_out, fk_out]))
 ```
 
-Use the inspect_table function to print table relationship information bu passing it a list of table names. 
+Use the *inspect_relationships()* function to print table relationship information by passing it a table name. The function returns the table information as a long string.
 
 You can get information about one table by passing it a table name, as shown below:
 
 ```python
-print(inspect_table("Album"))
+print(inspect_relationships("Album"))
+```
+
+The function returns the table information as a long string:
+
+```
+Table = Album
+Columns = Title, ArtistId, AlbumId
+Primary Keys = AlbumId
+Foreign Keys:
+    ArtistId ---> Artist:ArtistId
 ```
 
 you can see all tables in a database by iterating through the list returned by the *inspector* object's *get_table_names()* method, as shown below. 
 
 ```python
 for tbl in inspector.get_table_names():
-    print(inspect_table(tbl))
+    print(inspect_relationships(tbl))
 ```
 
-The output is a long list showing information about each table. We show a subset of the output, below, showing tables *PlaylistTrack* and *Track*:
+The output is a long list showing information about each table. 
 
 ```
+Table = Album
+Columns = Title, ArtistId, AlbumId
+Primary Keys = AlbumId
+Foreign Keys:
+    ArtistId ---> Artist:ArtistId
+
+Table = Artist
+Columns = Name, ArtistId
+Primary Keys = ArtistId
+
+Table = Customer
+Columns = FirstName, LastName, Company, Address, City, State, Country, PostalCode, Phone, Fax, Email, SupportRepId, CustomerId
+Primary Keys = CustomerId
+Foreign Keys:
+    SupportRepId ---> Employee:EmployeeId
+
+Table = Employee
+Columns = LastName, FirstName, Title, ReportsTo, BirthDate, HireDate, Address, City, State, Country, PostalCode, Phone, Fax, Email, EmployeeId
+Primary Keys = EmployeeId
+Foreign Keys:
+    ReportsTo ---> Employee:EmployeeId
+
+Table = Genre
+Columns = Name, GenreId
+Primary Keys = GenreId
+
+Table = Invoice
+Columns = CustomerId, InvoiceDate, BillingAddress, BillingCity, BillingState, BillingCountry, BillingPostalCode, Total, InvoiceId
+Primary Keys = InvoiceId
+Foreign Keys:
+    CustomerId ---> Customer:CustomerId
+
+Table = InvoiceLine
+Columns = InvoiceId, TrackId, UnitPrice, Quantity, InvoiceLineId
+Primary Keys = InvoiceLineId
+Foreign Keys:
+    TrackId ---> Track:TrackId
+    InvoiceId ---> Invoice:InvoiceId
+
+Table = MediaType
+Columns = Name, MediaTypeId
+Primary Keys = MediaTypeId
+
+Table = Playlist
+Columns = Name, PlaylistId
+Primary Keys = PlaylistId
+
 Table = PlaylistTrack
 Columns = PlaylistId, TrackId
 Primary Keys = PlaylistId, TrackId
@@ -767,49 +828,4 @@ Foreign Keys:
     AlbumId ---> Album:AlbumId
 ```
 
-
-To view how tables are linked with relationships in ORM you can use the *inspect* function to look at relationship properties. Here, for example, are the relationships from the point of view of the Album table:
-
-```python
-print(f"Album table relationships")
-print()
-for relationship in inspect(Album).relationships:
-    print(f"Relationship: {relationship}")
-    print(f"Direction:    {relationship.direction}")
-    print(f"Joined Table: {relationship.target}")
-    print()
-```
-
-The output is:
-
-```
-Album table relationships
-
-Relationship: Album.artist
-Direction:    symbol('MANYTOONE')
-Joined Table: Artist
-
-Relationship: Album.track_collection
-Direction:    symbol('ONETOMANY')
-Joined Table: Track
-```
-
-You can use the information gathered from the *inspection* object to draft a database diagram that you can use as a reference when writing select statements for the SQLAlchemy ORM.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+You can use the information gathered about each table's relationships to draft a database diagram similar to the diagram shown earlier in this document. 
