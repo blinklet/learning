@@ -2,7 +2,7 @@
 
 Most [Pandas](https://pandas.pydata.org/) books and blogs do not show you how to get data stored in databases. Instead, they work with simpler-to-use data sources like [CSV files](https://en.wikipedia.org/wiki/Comma-separated_values). There are already [many](https://alongrandomwalk.com/2020/09/14/read-and-write-files-with-jupyter-notebooks/) [tutorials](https://www.digitalocean.com/community/tutorials/data-analysis-and-visualization-with-pandas-and-jupyter-notebook-in-python-3) [available](https://www.datacamp.com/tutorial/python-excel-tutorial) for these simpler examples.
 
-This document will show you how to read data from a database and load it into Pandas dataframes for further analysis. This document does not go into details about handling and analyzing data after you get it from the database. While you will see lots of examples in this document, they do not represent a comprehensive set of Pandas functions.
+This document will show you how to read data from a database and load it into Pandas dataframes for further analysis. This document does not go into details about handling and analyzing data after you get it from the database. While you will see a few Pandas examples in this document, they do not represent a comprehensive set of Pandas functions.
 
 # Python, pandas, and databases
 
@@ -73,9 +73,11 @@ In the virtual environment, install the Pandas Python package and supporting pac
 
 When Pandas is installed, [NumPy](https://numpy.org/) will also be installed NumPy (Numerical Python) is an open source Python library that’s used for working with numerical data in Python.
 
-### New frameworks
+### Other frameworks
 
-While Pandas and NumPy are the current standard for data analytics in Python, some new projects are on the horizon that claim to be more modern and efficient. [Apache Arrow](https://arrow.apache.org/) could be used in place of NumPy and [Polars](https://www.pola.rs/) could be used in place of Pandas. For now, we will use Pandas, which uses Numpy.
+While Pandas and NumPy are often used for data analytics in Python, some new projects are on the horizon that claim to be more modern and efficient. [Apache Arrow](https://arrow.apache.org/) could be used in place of NumPy and [Polars](https://www.pola.rs/) could be used in place of Pandas. For now, we will use Pandas, which uses Numpy.
+
+For very large use-cases, Pandas and Numpy can be replaced by a "big data" framework like [Apache Spark](https://spark.apache.org/), which provide dataframe functionality [similar to Pandas](https://towardsdatascience.com/spark-vs-pandas-part-2-spark-c57f8ea3a781) and enables parallel data processing, including the ability to store and process data sets stored on multiple computers. Spark is incorporated into [Databricks](https://www.databricks.com/), part of the Nokia Advanced Analytics offering.
 
 ## Install Jupyter Notebooks
 
