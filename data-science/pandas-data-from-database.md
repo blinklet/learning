@@ -1,20 +1,20 @@
-% Reading database tables into pandas dataframes
+% Python, pandas, and databases
 
-Most [Pandas](https://pandas.pydata.org/) books and blogs do not show you how to get data stored in databases. Instead, they work with simpler-to-use data sources like [CSV files](https://en.wikipedia.org/wiki/Comma-separated_values). There are already [many](https://alongrandomwalk.com/2020/09/14/read-and-write-files-with-jupyter-notebooks/) [tutorials](https://www.digitalocean.com/community/tutorials/data-analysis-and-visualization-with-pandas-and-jupyter-notebook-in-python-3) [available](https://www.datacamp.com/tutorial/python-excel-tutorial) for these simpler examples.
+Python programmers who use Pandas to perform data analysis have many options for gathering data from databases and incorporating it into their programs. Pandas users may get data from SQL databases using Pandas functions, using a Python database driver combined with SQL queries, using an [object-relational mapping (ORM) framework](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping), or some combination of these tools.
 
-This document will show you how to read data from a database and load it into Pandas dataframes for further analysis. This document does not go into details about handling and analyzing data after you get it from the database. While you will see a few Pandas examples in this document, they do not represent a comprehensive set of Pandas functions.
+Many [Pandas](https://pandas.pydata.org/) books and blogs do not show you how to get data stored in databases. Instead, they work with simpler-to-use data sources like [CSV files](https://en.wikipedia.org/wiki/Comma-separated_values). There are already [many](https://alongrandomwalk.com/2020/09/14/read-and-write-files-with-jupyter-notebooks/) [tutorials](https://www.digitalocean.com/community/tutorials/data-analysis-and-visualization-with-pandas-and-jupyter-notebook-in-python-3) [available](https://www.datacamp.com/tutorial/python-excel-tutorial) for these simpler examples so this document will focus only on using Pandas to read data from databases.
 
-# Python, pandas, and databases
+<!--more-->
 
-Python programmers who use Pandas to perform data analysis have many options for gathering data and incorporating it into their programs. Pandas users may get data from SQL databases using Pandas functions, a database driver combined with SQL queries, or by using an [object-relational mapping (ORM) framework](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping), or some combination of these tools.
+# Data from a database
 
-Programmers who do not know SQL can use Pandas to read individual SQL database tables into Pandas dataframes. Then, they can use Pandas to join, transform, and filter those dataframes until they create the dataset that they need.
+Programmers who do not wish to use SQL can use Pandas to read individual SQL database tables into Pandas dataframes. Then, they can use Pandas to join, transform, and filter those dataframes until they create the dataset that they need.
 
 Python programmers who are already proficient in writing [SQL queries](https://www.postgresqltutorial.com/postgresql-tutorial/postgresql-select/) may use them in Pandas to read a complex dataset into a Pandas dataframe. Or, they may directly access the data by passing their SQL queries to an SQL database driver. [^1]
 
 [^1]: Use the appropriate driver that is compatible with the SQL database you are using, such as [psycopg](https://www.psycopg.org/) for PostgreSQL, or [mysql-connector-python](https://dev.mysql.com/doc/connector-python/en/) for MySQL. Since we are using an SQLite database, we could use the [sqlite package](https://www.sqlite.org/index.html), which is part of the Python standard library.
 
-Finally, Python programmers who do not know SQL but who still want to build powerful SQL queries in Python programs may use the [SQLAlchemy ORM](https://www.sqlalchemy.org/SQLAlchemy). It can be used to create queries for Pandas functions or to select data directly from the database. I will discuss SQLAlchemy in another document.
+Finally, Python programmers who do not wish to use SQL, but who still want to build powerful SQL queries in Python programs, may use the [SQLAlchemy ORM](https://www.sqlalchemy.org/SQLAlchemy). It can be used to create queries for Pandas functions or to select data directly from the database. I will discuss SQLAlchemy in another document.
 
 # Set up your environment
 
@@ -22,24 +22,22 @@ Before you start working through this tutorial, set up your database server and 
 
 ## Set up your database
 
-You do not need to install a database server because we will use an SQLite database. We chose to use the SQLite database engine to serve the database in this tutorial because SQLite is the most widely used SQL database and because we do not need to install and configure a separate SQL server. SQLite is a file-based database and the SQLite database driver is built into the Python standard library.
+To follow this tutorial, you do not need to install a database server because we will use a SQLite database. SQLite is a file-based database and the SQLite database driver is built into the Python standard library so you do not need to install and configure a separate SQL server.
 
 ## Install Python on your Windows laptop
 
-Start by installing Python on your laptop. Go to the [Python web page](https://www.python.org/) for the most up-to-date information about installing python on your operating system.
-
-[Install Python on Windows](https://learn.microsoft.com/en-us/windows/python/beginners#install-python) from the *Microsoft Store*. Open the Microsoft Store app and search for Python. Install the latest version. [Python 3.11](https://apps.microsoft.com/store/detail/python-311/9NRWMJP3717K?hl=en-ca&gl=ca&activetab=pivot%3Aoverviewtab&rtc=1) was the latest version at the time I wrote this notebook so all examples use Python 3.11.
+Start by installing Python on your laptop, if it is not already installed. Go to the [Python web page](https://www.python.org/) for the most up-to-date information about installing python on your operating system.
 
 ## Install Pandas
 
 [Pandas](https://pandas.pydata.org/pandas-docs/stable/index.html) is a Python package that makes working with relational or labeled data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python. [^2]
 
-[^2]: From the [Pandas package overview documentation](https://pandas.pydata.org/pandas-docs/stable/getting_started/overview.html), accessed on March 17, 2023]
+[^2]: From the [Pandas package overview documentation](https://pandas.pydata.org/pandas-docs/stable/getting_started/overview.html), accessed on March 17, 2023
 
 To install Pandas:
 
 * Create a new folder for your data science learning projects
-* Create a Python virtual environment and activate it
+* Create a [Python virtual environment](https://realpython.com/python-virtual-environments-a-primer/) and activate it
 * Install Pandas in your virtual environment
 
 Open the [Windows Terminal](https://apps.microsoft.com/store/detail/windows-terminal/9N0DX20HK701?hl=en-us&gl=us) app.
@@ -71,21 +69,25 @@ In the virtual environment, install the Pandas Python package and supporting pac
 (env) > pip install openpyxl xlsxwriter xlrd
 ```
 
-When Pandas is installed, [NumPy](https://numpy.org/) will also be installed NumPy (Numerical Python) is an open source Python library that’s used for working with numerical data in Python.
+When Pandas is installed, [NumPy](https://numpy.org/) will also be installed. NumPy (Numerical Python) is an open source Python library that’s used for working with numerical data in Python.
 
 ### Other frameworks
 
-While Pandas and NumPy are often used for data analytics in Python, some new projects are on the horizon that claim to be more modern and efficient. [Apache Arrow](https://arrow.apache.org/) could be used in place of NumPy and [Polars](https://www.pola.rs/) could be used in place of Pandas. For now, we will use Pandas, which uses Numpy.
+While Pandas and NumPy are often used for data analytics in Python, some other projects claim to be more modern and efficient. 
 
-For very large use-cases, Pandas and Numpy can be replaced by a "big data" framework like [Apache Spark](https://spark.apache.org/), which provide dataframe functionality [similar to Pandas](https://towardsdatascience.com/spark-vs-pandas-part-2-spark-c57f8ea3a781) and enables parallel data processing, including the ability to store and process data sets stored on multiple computers. Spark is incorporated into [Databricks](https://www.databricks.com/), part of the Nokia Advanced Analytics offering.
+[Apache Arrow](https://arrow.apache.org/) could be used in place of NumPy. Arrow uses memory in a more efficient way and supports faster data processing operations. The next major release of [Pandas will use Apache Arrow](https://datapythonista.me/blog/pandas-20-and-the-arrow-revolution-part-i) as its back end.
+
+[Polars](https://www.pola.rs/) could be used in place of Pandas. It supports parallel processing, which delivers better performance on modern CPUs. It also uses Apache Arrow as its back end for data processing.
+
+For very large use-cases, Python programmers may use a "big data" framework like [Apache Spark](https://spark.apache.org/), which provides dataframe functionality [similar to Pandas and Polars](https://towardsdatascience.com/spark-vs-pandas-part-2-spark-c57f8ea3a781) and processes data sets stored across multiple computers. Spark is incorporated into [Databricks](https://www.databricks.com/), part of the Nokia Advanced Analytics offering. PySpark provides a [Python API](https://spark.apache.org/docs/latest/api/python/index.html) and a [Pandas API](https://spark.apache.org/docs/3.2.0/api/python/user_guide/pandas_on_spark/). Spark also [does a lot more](https://www.toptal.com/spark/introduction-to-apache-spark) than just process data in dataframes.
 
 ## Install Jupyter Notebooks
 
-You may, optionally, install [Jupyter](https://jupyter.org/). Many data scientists use Jupyter notebooks as a development environment and to present their results.
+Many data scientists use [Jupyter](https://jupyter.org/) notebooks as a development environment and to present their results.
 
-This document uses a Jupyter Notebook as an advanced [REPL](https://codewith.mu/en/tutorials/1.0/repl) that makes it easier to demonstrate the Python code used to access data from a database and display the results. If you prefer to use a simple text editor or another REPL, you can still follow along with this tutorial.
+This document uses a Jupyter Notebook as an advanced [REPL](https://codewith.mu/en/tutorials/1.0/repl) that makes it easier to demonstrate the Python code used to access data from a database and display the results. If you prefer to use a simple text editor or another REPL, you may. You can still follow along with this tutorial.
 
-Install JupyterLab in your Python virtual environment. 
+Install JupyterLab in your Python virtual environment.
 
 ```powershell
 (env) > pip install jupyterlab
@@ -103,17 +105,11 @@ The terminal will show multiple URLs that you can copy and paste into a web brow
 http://localhost:8888/?token=678b6891879b80fc02488701d553b1a2b4
 ```
 
-The token is needed the first time you use a new browser to access JupyterLab. After using it once, it is cached in the browser and you can connect to JupyterLab in the future with just the simple URL: 
-
-```
-http://localhost:8888
-```
-
 The Jupyter Notebook web interface looks like the image below.
 
 ![Jupyter Notebook user interface](./Images/JupyterNotebook001.png)
 
-When following along with the code examples in this document, open a new notebook cell for each example, enter the code, and run it. the results of code run in previous cells in held in memory and is available to subsequent cells. For example, a dataframe created in one cell can be used in a later cell.
+When following along with the code examples in this document, open a new notebook cell for each example, enter the code, and run it. The results of code run in previous cells is held in memory and is available to subsequent cells. For example, a dataframe created in one cell can be used in a later cell.
 
 ### Alternative Jupyter interfaces
 
@@ -129,18 +125,18 @@ Also, you can [edit Jupyter Notebooks in the VS Code editor](https://code.visual
 
 To practice the basics of data science, you need data. Eventually, you need to learn how to work with many sources of data, such as:
 
-* Databases such as SQL databases
+* SQL Databases
 * Excel and CSV files stored on a secure SharePoint site
 * APIs of external services
 * Web scraping
 
 While you work in the Analytics team, most of the data you will access will come from a database or a file on a secure SharePoint site. Most of our data comes from the HRDP database.
 
-When you are at the beginning of your learning, it may be best to practice on a "dummy" database so you do not accidentally cause issues with a production database. 
+It may be best to practice on a "dummy" database so you do not accidentally cause issues with a production database. 
 
 ## Available public databases
 
-You can find data sets that are [available to the public](https://www.dropbase.io/post/top-11-open-and-public-data-sources) but very few of them run on database servers. We want to learn how to analyze data stored in a database so we need data available in that format.
+Many data sets that are [available to the public](https://www.dropbase.io/post/top-11-open-and-public-data-sources) but very few of them run on database servers. We want to learn how to analyze data stored in a database so we need data available in that format.
 
 The best solution is to install an SQL database engine like [SQLite](https://www.sqlite.org/index.html) on your PC and download a database backup from a public repository. In this document, we will use the *[Chinook database](https://github.com/lerocha/chinook-database)*, which is a public database that tries to emulate a media store's database. It contains customer names and addresses, sales data, and inventory data.
 
@@ -150,7 +146,9 @@ The best solution is to install an SQL database engine like [SQLite](https://www
 
 You may encounter a "chicken and egg" situation where you want to use Pandas to read SQL tables into dataframes but you do not know enough about the database schema to proceed. At a minimum, you need to know the database table names. 
 
-It is best to find the database documentation, if it is available. If not, you can research the SQL statement that will list the database table names. The statement syntax is different for different databases. For a SQLite database, the command is:
+It is best to read the database documentation, if it is available. If no documentation is available, you can analyze the database with an SQL discovery tool like [*SchemaSpy*](https://schemaspy.org/), [*SchemaCrawler*](https://www.schemacrawler.com/), or [*SQLite Browser*](https://github.com/sqlitebrowser/sqlitebrowser).
+
+Right now, all you need is the table names. You can research the SQL statement that will list the database table names. The statement syntax is different for different databases. For a SQLite database, the statement is:
 
 ```python
 import pandas as pd
@@ -163,7 +161,22 @@ tables = pd.read_sql_query(statement, url)
 print(tables)
 ```
 
-We will cover the Pandas *read_sql_query()* function later in this chapter.
+We will cover the Pandas *read_sql_query()* function later in this chapter. The output lists the table names in the database:
+
+```
+             name
+0           Album
+1          Artist
+2        Customer
+3        Employee
+4           Genre
+5         Invoice
+6     InvoiceLine
+7       MediaType
+8        Playlist
+9   PlaylistTrack
+10          Track
+```
 
 
 ## The *read_sql_table* function
@@ -174,14 +187,21 @@ Pandas does the work of creating a connection to the database, reading all the c
 
 ```python
 import pandas as pd
+from pathlib import Path
 
-url = r"sqlite:///C:/Users/blinklet/Documents/Chinook_Sqlite.sqlite"
+home_dir = Path.home()
+file_path = home_dir.joinpath('Documents', 'Chinook_Sqlite.sqlite')
+url = 'sqlite:///' + str(file_path)
 
 albums = pd.read_sql_table('Album', url)
 
-print(df.shape)
-display(df.head(3))
+print(albums.shape)
+display(albums.head(3))
 ```
+
+> **NOTE:** We used the Python *pathlib* library to build a path that would work on any user's computer. If you wish, you may manually encode the path as a raw string using a statement like the one below:
+>
+>     url = r"sqlite:///C:/Users/username/Documents/Chinook_Sqlite.sqlite"
 
 Since we are using a Jupyter Notebook, we can use the [*display* function](https://datascientyst.com/style-pandas-dataframe-like-pro-examples/) to output a [styled table](https://pandas.pydata.org/pandas-docs/stable/user_guide/style.html) that is more readable. The output looks like below:
 
@@ -307,7 +327,7 @@ Now you have a dataframe that has 3,503 rows. Each row contains  information abo
 
 ### Merging dataframes with outer joins
 
-When merging dataframes, you may want to include rows from one or both dataframes that do not match on the defined columns in each dataframe. This is called at [*outer join*](https://www.freecodecamp.org/news/sql-join-types-inner-join-vs-outer-join-example/).
+When merging dataframes, you may want to include rows from one or both dataframes that do not match on the defined columns in each dataframe. This is called an [*outer join*](https://www.freecodecamp.org/news/sql-join-types-inner-join-vs-outer-join-example/).
 
 For example, imagine that we need to create a dataframe that shows the number of customers supported by each employee. 
 
@@ -329,9 +349,9 @@ customers columns:  Index(['CustomerId', 'FirstName', 'LastName', 'Company', 'Ad
 employees columns:  Index(['EmployeeId', 'LastName', 'FirstName', 'Title', 'ReportsTo', 'BirthDate', 'HireDate', 'Address', 'City', 'State', 'Country', 'PostalCode', 'Phone', 'Fax', 'Email'], dtype='object')
 ``` 
 
-There are no column names that suggest they might provide a match between the two tables. If you were accessing the data using an SQL client or an ORM, you could see the relationship between the two database tables. But, unless they are documented, you cannot so easily determine the relationships between Pandas dataframes.
+There are no column names that suggest they might provide a match between the two tables. Read the database documentation to determine the related columns, if any, that are in the dataframes you created from the tables. Or, if you were accessing the data using an SQL client or an ORM, you could manually document the relationship between the two database tables.
 
-You may be able to figure out the relationships between two dataframes you want to merge. To find potential matches, display a few rows of each dataframe.
+If you do not have database documentation, you may still be able to figure out the relationships between two dataframes you want to merge. To find potential matches, display a few rows of each dataframe.
 
 ```python
 display(customers.sample(2))
@@ -395,11 +415,11 @@ We see the following output:
 
 We see that five employees supported no customers. This makes sense when you look at the employees' titles.
 
-## The *read_sql_query* function
+# Select data from the database using SQL queries
 
 When working with large amounts of data, you may prefer to perform most of your data joins, grouping, and filter operations on the database server instead of locally on your PC. The Pandas *read_sql_query* enables you to send an SQL query to the database and then load the selected data into a dataframe.
 
-### Selecting data
+## The *read_sql_query* function
 
 To select data from the SQL database, you need to create an SQL query statement using the [SQL language](https://en.wikipedia.org/wiki/SQL). For example, see the SQL statement below that selects all the columns in a table:
 
@@ -428,7 +448,7 @@ The output shows a random sample of four rows from the *albums* dataframe, which
 218      219                     Tangents       143
 ```
 
-### Filtering data
+## Filtering data
 
 When you use SQL queries in Pandas, you can select a smaller subset of data to read into your dataframe. This is more efficient than reading in all the data from a table and then using Pandas to remove data you don't need.
 
@@ -458,7 +478,7 @@ The output shows that the *albums* dataframe now contains only four rows of albu
 3            Vinícius De Moraes - Sem Limite
 ```
 
-### Joining tables into one dataframe
+## Joining tables into one dataframe
 
 Another benefit of SQL is that, when working with large databases, you can join tables and clean data more efficiently on the SQL server because it is optimized for these kinds of operations.
 
@@ -486,11 +506,44 @@ The *df1* dataframe contains only thirteen rows and only the columns needed. Eac
 
 ![Data selected by Pandas using an SQL query](./Images/pandas054.png)
 
+If you know the relationships defined between tables in the SQL database, you can write simpler SQL join statements because you don't always need to state which columns to join on.  
+
+# Saving pandas dataframes
+
+Pandas works in your computer's memory. The pandas workflow does not require that you save work to disk and then read it back later. If you are re-starting a data analysis project, you would normally go back to the original data source, read in the data again and apply the Pandas functions you wish to apply. If you are [handing the dataframe off to another program](https://sparkbyexamples.com/pandas/convert-pandas-to-pyspark-dataframe/), you would normally do that in memory.
+
+One case where you might want to save a dataframe to disk is when you wish to output the results to a spreadsheet for an end user, who may have asked for a spreadsheet version of the results. To [save a dataframe to an Excel spreadsheet](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_pickle.html), execute the following statement:
+
+```python
+df1.to_excel("artist_info.xlsx", index=False)  
+```
+
+You can [add style methods](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.io.formats.style.Styler.to_excel.html#pandas.io.formats.style.Styler.to_excel) to make the Excel spreadsheet look nice for your stakeholder. You can also output [complex spreadsheets with multiple worksheets](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.ExcelWriter.html).
+
+Another case might be where you want to convert the Pandas dataframe into a CSV file for use by Power BI. This is not the best way to integrate Pandas and Power BI; it is better to [use pandas in Power BI](https://realpython.com/power-bi-python/). But, sometimes you have to work the way others are working. To save a Pandas dataframe as a CSV file, execute the following statement:
+
+```python
+df1.to_csv("artist_info.csv", index=False)
+```
+
+You will not normally need to save your Pandas dataframe to disk for your own use. However, if you want to save your Pandas dataframe to disk so you can use it later, the best option is to [*pickle*](https://realpython.com/python-pickle-module/) the dataframe. This saves pandas dataframe objects to a file, maintaining column data types and other Pandas-specific information that would be lost if the dataframe was saved in other formats. To pickle a pandas dataframe, execute the following statement:
+
+```python
+df1.to_pickle("artist_info.pkl")
+```
+
+To read back the picked dataframe, execute the following statement:
+
+```python
+new_df = pd.read_pickle("artist_info.pkl")
+```
+
+
 # Conclusion
 
 You have learned enough to read data from an SQL database into a Pandas dataframe. You can use Pandas to read entire database tables into dataframes, then operate on them locally on your PC. You can also use Pandas to send an SQL query to the database and read the results into a dataframe. 
 
-I recommend using SQL queries to select the data from the database before reading it into a Pandas dataframe. The SQL language is relatively simple to learn for simple queries and joins. But, as queries get more complex, you may want to use the [SQLalchemy ORM](https://www.sqlalchemy.org/SQLAlchemy) to build the SQL statements used by the Pandas *read_sql_query* function.
+You may most often use SQL queries to select the data from the database before reading it into a Pandas dataframe. The SQL language is relatively simple to learn for queries and joins. If you prefer to work exclusively in Python, you may want to use the [SQLalchemy ORM](https://www.sqlalchemy.org/SQLAlchemy) to build the SQL statements used by the Pandas *read_sql_query* function.
 
 In the next document, I will describe how to use SQLAlchemy ORM to automatically build a Python object model that represents an existing database and to create SQL statements that can be used by Pandas to read selected data into dataframes.
 
