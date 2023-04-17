@@ -39,32 +39,39 @@ Then run the following command in PowerShell or CMD console, or double-click the
 https://learn.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver16&tabs=ubuntu18-install%2Calpine17-install%2Cdebian8-install%2Credhat7-13-install%2Crhel7-offline
 
 
-```wincmd
-> cd .\Downloads\
-> msiexec /i msodbcsql.msi ADDLOCAL=ALL
+```bash
+$ sudo su
+# curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+# curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list > /etc/apt/sources.list.d/mssql-release.list
+# exit
+$ sudo apt update
+$ sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18
+$ echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bashrc
+$ source ~/.bashrc
 ```
+
 
 Install the Client Components and the SDK
 
 Then set up your Python virtual environment
 
-```powershell
-> mkdir project_dir
-> cd project_dir
-> python -m venv env
-> .\env\Scripts\activate
-(env) > pip install pyodbc 
-(env) > pip install pandas
-(env) > pip install openpyxl xlsxwriter xlrd
-(env) > pip install jupyterlab
-(env) > pip install SQLAlchemy
-pip install azure-identity
+```bash
+$ mkdir project_dir
+$ cd project_dir
+$ python3 -m venv env
+$ source env/bin/activate
+(env) $ pip install pyodbc 
+(env) $ pip install pandas
+(env) $ pip install openpyxl xlsxwriter xlrd
+(env) $ pip install jupyterlab
+(env) $ pip install SQLAlchemy
+(env) $ pip install azure-identity
 ```
 
 Create and run a notebook
 
-```powershell
-(env) > jupyter notebook
+```bash
+(env) $ jupyter notebook
 ```
 
 Click on URL in terminal
@@ -73,9 +80,9 @@ Save-As "azure-db-python".
 
 ```python
 import pyodbc
-server = 'azure-db-test.database.windows.net'
-database = 'azure-test'
-username ='brian@url.com'
+server = 'brian-dbserver.database.windows.net'
+database = 'data-science-test'
+username ='brian.e.linkletter@gmail.com'
 Authentication='ActiveDirectoryInteractive'
 driver= '{ODBC Driver 18 for SQL Server}'
 conn = pyodbc.connect('DRIVER='+driver+
@@ -87,6 +94,13 @@ conn = pyodbc.connect('DRIVER='+driver+
 
 print(conn)
 ```
+
+from sqlalchemy import create_engine
+engine = create_engine('mssql+pyodbc://bDriver={ODBC Driver 18 for SQL Server};Server=tcp:brian-dbserver.database.windows.net,1433;Database=data-science-test;Uid=brian.e.linkletter@gmail.com;Pwd=gpWQ%y3Xv29F;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;Authentication=ActiveDirectoryPassword')
+
+
+
+
 
 import pyodbc
 server = 'databaseserver.net'
@@ -155,7 +169,7 @@ connect_url = URL.create(
     query=dict(driver='ODBC Driver 18 for SQL Server'))
 
 
-
+jdbc:sqlserver://brian-dbserver.database.windows.net:1433;database=data-science-test;user={your_username_here};password={your_password_here};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;authentication=ActiveDirectoryPassword
 
 
 from sqlalchemy.engine import URL
@@ -165,11 +179,10 @@ connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_st
 from sqlalchemy import create_engine
 engine = create_engine(connection_url)
 
+data-science-test
 
 
 
-from sqlalchemy import create_engine
-engine = create_engine('mssql+pyodbc://azure-db-test.database.windows.net/azure-test?trusted_connection=yes')
 
 servername = 'azure-db-test.database.windows.net'
 dbname = 'azure-test'
@@ -184,8 +197,8 @@ from sqlalchemy import create_engine
 from azure.identity import InteractiveBrowserCredential
 import pyodbc
 
-server_name = 'azure-db-test.database.windows.net'
-database_name = 'azure-test'
+server_name = 'brian-dbserver.database.windows.net'
+database_name = 'data-science-test'
 
 credential = InteractiveBrowserCredential()
 
@@ -200,8 +213,12 @@ engine = create_engine(f"mssql+pyodbc:///?odbc_connect={connection_string}")
 ```
 
 
+
+
 Base = automap_base()
 Base.prepare(autoload_with=engine)
+
+
 
 
 
@@ -212,4 +229,25 @@ tables = ['Snapshot P24 Last Close']
 metadata.reflect(engine, only=tables)
 
 Base = automap_base(metadata=metadata)
-Base.prepare()
+Base.prepare
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+from sqlalchemy import create_engine
+engine = create_engine('mssql+pyodbc://bDriver={ODBC Driver 18 for SQL Server};Server=tcp:brian-dbserver.database.windows.net,1433;Database=data-science-test;Uid=brian.e.linkletter@gmail.com;Pwd=gpWQ%y3Xv29F;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;Authentication=ActiveDirectoryPassword')
+```
+
+
+Driver={ODBC Driver 18 for SQL Server};Server=tcp:brian-dbserver.database.windows.net,1433;Database=data-science-test;Uid=brian.e.linkletter@gmail.com;Pwd=gpWQ%y3Xv29F;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;Authentication=ActiveDirectoryPassword
+
