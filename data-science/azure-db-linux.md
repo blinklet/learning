@@ -51,6 +51,9 @@ $ source ~/.bashrc
 ```
 
 
+
+
+
 Install the Client Components and the SDK
 
 Then set up your Python virtual environment
