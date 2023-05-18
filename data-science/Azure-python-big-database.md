@@ -26,11 +26,11 @@ THE DATABASE may contain sensitive data. To reduce security risks, access only t
 
 ## Relevance
 
-The topics covered in this document may not be relevant to most people working in the Analytics team because it ends where most will start: with data already retrieved from a database and stored in data frames. 
+The topics covered in this document may not be relevant to most data scientists because it ends where most will start: with data already retrieved from a database and stored in data frames. 
 
-If you work in the Microsoft Advanced Analytics Platform, the DPE and IT teams will have created a system for you that maintains one or more DataBricks data frames and keeps them in sync with the Database. Then, you will mostly work with the DataBricks PySpark API to transform and analyze the data. 
+If you work in Microsoft Azure, your IT team will have created a system for you that maintains one or more DataBricks data frames and keeps them in sync with your Database. Then, you will mostly work with the DataBricks PySpark API to transform and analyze the data. 
 
-However, knowing how the Database may be accessed from a Python program may help some in the Analytics team at some point. 
+However, knowing how the Database may be accessed from a Python program may help some programmers at some point. 
 
 # Set up your Python environment
 
@@ -169,7 +169,7 @@ conn = pyodbc.connect(connection_string)
 ```
 
 
-> **NOTE:** The Database server address and database name are not given to all employees so I will not include them in this document. The database team will give you the server and database names when they provide you with access. Replace the text in the *server* and *database* variables with the real database server and database information.
+> **NOTE:** Replace the text in the *server* and *database* variables with the real database server and database information.
 
 The example above, when run, opens an interactive login session in a new web browser window. Enter your Microsoft password into the password prompt in the browser window.
 
@@ -318,7 +318,7 @@ In fact, none of the views in the Database have primary keys defined. This is ac
 
 Now that you have found the schemas, tables, and columns that contain the data you are interested in, you can read data using T-SQL statements and the pyodbc driver's *cursor.execute()* method.
 
-For example, to gather a little bit of data about five randomly-selected employees, run the following code:
+For example, to gather a little bit of data about five randomly-selected rows, run the following code:
 
 ```python
 statement = """
@@ -982,7 +982,7 @@ As you can see, programmers can use a *Select* instance's methods to perform com
 
 The results of an SQL query can be converted to a Pandas data frame using the *pandas.DataFrame* class.
 
-For example, create an SQL statement that groups employees by country, counts the number of employees in each country, and sorts the results in descending order. Then convert the result into a Pandas data frame.
+For example, create an SQL statement that groups items by country, counts the number of items in each country, and sorts the results in descending order. Then convert the result into a Pandas data frame.
 
 
 ```python
@@ -992,9 +992,9 @@ statement = (
     select(
         Sample_View_Name.column_two,
         func.count(Sample_View_Name.column_zero)
-        .label("Num_Employees")
+        .label("Num_Items")
     ).group_by(Sample_View_Name.column_two)
-    .order_by(desc("Num_Employees"))
+    .order_by(desc("Num_Items"))
 )
 
 with Session(engine) as session:
@@ -1006,7 +1006,7 @@ countries = pd.DataFrame(results, columns=headers)
 print(countries)
 ```
 
-The results in a sorted list of countries by number of employees:
+The results in a sorted list of countries by number of items:
 
 ```
 xxxxxx    
@@ -1112,7 +1112,7 @@ If you are already familiar with Microsoft SQL Server, you know that you can per
 
 ### Filtering database results in Python
 
-Filter database results using the SQLAlchemy ORM's *where()* method. For example, to filter the result so we only see employees from Canada, create the following statement:
+Filter database results using the SQLAlchemy ORM's *where()* method. For example, to filter the result so we only see items from Canada, create the following statement:
 
 ```python
 statement = (
@@ -1126,9 +1126,9 @@ statement = (
 
 ### SQL functions
 
-The SQAlchemy *func()* function has many methods that allow you to run [SQL functions](https://learn.microsoft.com/en-us/sql/t-sql/functions/functions?view=sql-server-ver16) on the SQL server. [^4] To select data from a random sample of five employees, run the SQL Server's [*NEWID()* T-SQL function](https://learn.microsoft.com/en-us/sql/t-sql/functions/newid-transact-sql?view=sql-server-ver16#d-query-random-data-with-the-newid-function). Create a statement like the following:
+The SQAlchemy *func()* function has many methods that allow you to run [SQL functions](https://learn.microsoft.com/en-us/sql/t-sql/functions/functions?view=sql-server-ver16) on the SQL server. [^4] To select data from a random sample of five items, run the SQL Server's [*NEWID()* T-SQL function](https://learn.microsoft.com/en-us/sql/t-sql/functions/newid-transact-sql?view=sql-server-ver16#d-query-random-data-with-the-newid-function). Create a statement like the following:
 
-[^4]: Each version of SQL support different functions. For example, if you wanted to analyze data from a random sample of five employees, you would use the *NEWID()* T-SQL function. But, other SQL database engines provide functions like *RANDOM()* or *RAND()* to do the same thing.
+[^4]: Each version of SQL support different functions. For example, if you wanted to analyze data from a random sample of five items, you would use the *NEWID()* T-SQL function. But, other SQL database engines provide functions like *RANDOM()* or *RAND()* to do the same thing.
 
 ```python
 stmt = (
@@ -1157,7 +1157,7 @@ Column One, Column Two, Column Three
 xxxx
 ```
 
-You can chain methods in the same statement so that all operations are performed before the server sends the result to your program. In the following example, we call SQL Server's *COUNT()* function to count the number of employees in the table. Then we filter that count by country and/or status, using the *where()* method. 
+You can chain methods in the same statement so that all operations are performed before the server sends the result to your program. In the following example, we call SQL Server's *COUNT()* function to count the number of rows in the table. Then we filter that count by column_two and/or column_four, using the *where()* method. 
 
 ```python
 from sqlalchemy import func
@@ -1351,6 +1351,7 @@ Sample View Name:  Foreign Keys = []
 In fact, none of the views in the Database have primary keys defined. This acceptable when you are only reading data from the database. The primary key, foreign keys, and other constrains define relationships between tables in a relational database. Knowing the database relationship information is helpful, but not necessary, when reading information from tables. 
 
 
+
 ## Get data from the *sys.objects* view
 
 Another way to get database information is to query the [sys.objects](https://learn.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-objects-transact-sql?view=sql-server-ver16) catalog view in the SQL Server database. 
@@ -1377,7 +1378,7 @@ print(schema_list)
 The schema information is the same as was gathered from the *INFORMATION_SCHEMA.VIEWS* table.
 
 ```
-[('sample_schema',),  ('another_schema',)]
+[('compensation_and_performance',), ('employment_details',), ('global_mobility',), ('ot_recruitment',), ('personal',), ('recognition',), ('s4u_arp',), ('s4u_arp_short_term_incentives',), ('s4u_perf_annual_development_review',), ('s4u_perf_goal_setting',), ('s4u_perf_performance_improvement_plan',), ('s4u_succ_employee_career_flags',), ('s4u_succ_position_mdf',), ('s4u_succ_track_record_and_experiences',), ('s4u_succession',), ('sales_incentive',), ('supplemental',)]
 ```
 
 ### Table and views names in a schema
@@ -1389,7 +1390,7 @@ statement = """
 SELECT sys.objects.name AS table_name
 FROM sys.objects 
 INNER JOIN sys.schemas ON sys.objects.schema_id = sys.schemas.schema_id
-WHERE sys.schemas.name = 'sample_schema'
+WHERE sys.schemas.name = 'employment_details'
 """
 
 cursor.execute(statement)
@@ -1397,10 +1398,26 @@ for row in cursor.fetchall():
     print(*row)
 ```
 
-The output contains table and view names in the *sample_schema* schema.
+The output contains table and view names in the *employment_details* schema.
 
 ```
-xxxxx
+Basic Employment Details All
+Basic Employment Details Current
+Externals
+Flexible Working
+Global_Mobility_AssigDetail
+Monitoring of Tasks
+New Line Managers
+Organizational Data All
+Organizational Data Current
+Other IDs
+Snapshot Non P24 Headcount
+Snapshot Non P24 Last Close
+Snapshot P24 Employee Master
+Snapshot P24 Last Close
+Snapshot P24 Organizational Data
+Snapshot P24 Workforce Delta
+Snapshot P24 Workforce Delta mapping view
 ```
 
 ### Column names in a table
@@ -1416,25 +1433,58 @@ SELECT
 FROM sys.objects 
 INNER JOIN sys.columns ON sys.objects.object_id = sys.columns.object_id
 INNER JOIN sys.types ON sys.types.system_type_id = sys.columns.system_type_id
-WHERE sys.objects.name = 'Sample View Name'
+WHERE sys.objects.name = 'Snapshot P24 Last Close'
 AND sys.types.name != 'sysname'
 """
 
 cursor.execute(statement)
 for row in cursor.fetchall():
-    print(*row)
+    print(f"{row[0]:24}{row[1]:10}{row[2]:10}")
 ```
 
-The output contains name, type, and length of each column in the *Sample View Name* view.
+The output contains name, type, and length of each column in the *Snapshot P24 Last Close* view. It will print out all 313 columns so we show only a subset below.
 
 ```
-xxxxx
+Employee ID             varchar           10
+Period                  datetime           8
+Pers No                 varchar            8
+HC RLS Group            varchar           24
+Country Legal           varchar            2
+Country Legal Name      varchar           80
+HC driver               varchar           20
+Nokia ID                varchar           20
+UPI                     varchar           30
+Last Name               nvarchar          80
+First Name              nvarchar          80
+...
 ```
-
 
 ### Table constraints
 
-xxxxx
+To get information about constraints such as a primary key, query tables in the *sys* schema with the following code. [^7] The example below asks for constraint information in the view named *Snapshot P24 Last Close*.
+
+[^7]: From [Stack Overflow answer: reference# 18622200](https://stackoverflow.com/questions/18622200/how-do-i-get-constraints-on-a-sql-server-table-column)
+
+```python
+statement = """
+SELECT
+    chk.definition
+FROM sys.check_constraints chk
+INNER JOIN sys.columns col
+    ON chk.parent_object_id = col.object_id
+INNER JOIN sys.tables st
+    ON chk.parent_object_id = st.object_id
+WHERE st.name = 'Snapshot P24 Last Close'
+AND col.column_id = chk.parent_column_id
+"""
+
+cursor.execute(statement)
+print(cursor.fetchall())
+```
+
+This outputs only an empty list, which indicates there are no constraints in the view so we now know there is no primary key in the view named *Snapshot P24 Last Close*.
+
+
 
 
 
