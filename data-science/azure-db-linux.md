@@ -28,6 +28,15 @@ https://learn.microsoft.com/en-us/azure/azure-sql/database/connect-query-python?
 https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql
 
 
+Create Azure Active Directory?
+In portal, select "Azure Active Directory"
+Click on "Users" see your user
+
+"Tutorial: Set up Azure Active Directory authentication for SQL Server"
+https://learn.microsoft.com/en-us/sql/relational-databases/security/authentication-access/azure-ad-authentication-sql-server-setup-tutorial?view=sql-server-ver16
+
+
+
 
 Download the Microsoft [ODBC driver](https://github.com/mkleehammer/pyodbc/) from their [downloads page](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver16#download-for-windows)
 
