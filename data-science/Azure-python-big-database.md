@@ -1,3 +1,30 @@
+Recast with Chinook or MS example DB (MS Example DB has views)
+
+Maybe retry Northwind on SQLite?
+* https://database.guide/2-sample-databases-sqlite/
+* because I think it is the same as the sample data in SQL Server...
+
+Northwind via docker?
+* https://github.com/pthom/northwind_psql
+  * just clone and run docker compose up
+* https://github.com/piotrpersona/sql-server-northwind
+  * Shell script could be good script to follow manually?
+
+Chinook:  
+* https://github.com/arjunchndr/Analyzing-Chinook-Database-using-SQL-and-Python/blob/master/Analyzing%20Chinook%20Database%20using%20SQL%20and%20Python.ipynb
+* https://m-soro.github.io/Business-Analytics/SQL-for-Data-Analysis/L4-Project-Query-Music-Store/
+* https://data-xtractor.com/knowledgebase/chinook-database-sample/
+
+Chinook on Docker
+* https://gist.github.com/sualeh/f80eccde37f8fef67ad138996fd4824d
+  * 
+
+
+
+
+
+
+
 % SQL and Python access to the database
 
 This document will show you how to use simple SQL queries to read data from the Database, using either [Microsoft Transact-SQL (T-SQL)](https://learn.microsoft.com/en-us/sql/t-sql/queries/select-transact-sql) [^1] or the [SQLAlchemy ORM](https://docs.sqlalchemy.org/en/20/tutorial/data_select.html). 
@@ -150,22 +177,22 @@ Import the *pyodbc* module and create a database connection string that you can 
 ```python
 import pyodbc
 
-server = 'my-database-server.database.windows.net'
-database = 'my-database-name'
-username ='your.name@microsoft.com'
+server = 'hraap-euw-prod-asq01.database.windows.net'
+database = 'hraap-euw-db01'
+username ='brian.linkletter@nokia.com'
 Authentication='ActiveDirectoryInteractive'
 driver= '{ODBC Driver 18 for SQL Server}'
 
-conn = pyodbc.connect('DRIVER='+driver+
+connection_string = ('DRIVER='+driver+
                       ';SERVER='+server+
                       ';PORT=1433;DATABASE='+database+
                       ';UID='+username+
                       ';AUTHENTICATION='+Authentication
                       )
 
-connection_string = (
-    
 conn = pyodbc.connect(connection_string)
+
+print(conn)
 ```
 
 
