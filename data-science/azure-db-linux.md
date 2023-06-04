@@ -19,6 +19,13 @@ Create new server
 Add AD admin
 selected "Azure Portal" -- I hope it works
 
+cleared the checkbox "Support only Azure Active Directory authentication for this server". 
+click "Save"
+
+The configure the server
+
+Set up access:
+https://learn.microsoft.com/en-ca/azure/azure-sql/database/network-access-controls-overview?view=azuresql
 
 
 
@@ -26,15 +33,6 @@ selected "Azure Portal" -- I hope it works
 https://learn.microsoft.com/en-us/azure/azure-sql/database/connect-query-python?view=azuresql
 
 https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql
-
-
-Create Azure Active Directory?
-In portal, select "Azure Active Directory"
-Click on "Users" see your user
-
-"Tutorial: Set up Azure Active Directory authentication for SQL Server"
-https://learn.microsoft.com/en-us/sql/relational-databases/security/authentication-access/azure-ad-authentication-sql-server-setup-tutorial?view=sql-server-ver16
-
 
 
 
@@ -70,9 +68,9 @@ Then set up your Python virtual environment
 ```bash
 $ mkdir project_dir
 $ cd project_dir
-$ python3 -m venv env
+$ python -Xfrozen_modules=off -m venv env
 $ source env/bin/activate
-(env) $ pip install pyodbc 
+(env) $ cc 
 (env) $ pip install pandas
 (env) $ pip install openpyxl xlsxwriter xlrd
 (env) $ pip install jupyterlab
@@ -83,7 +81,7 @@ $ source env/bin/activate
 Create and run a notebook
 
 ```bash
-(env) $ jupyter notebook
+(env) $ jupyter-lab
 ```
 
 Click on URL in terminal
