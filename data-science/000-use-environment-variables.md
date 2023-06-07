@@ -1,24 +1,14 @@
-Environment variables are dynamic values that are set outside of the program, either through the operating system's command line interface, through a configuration file or, in the case of cloud environments, via a web interface. They are essentially key-value pairs that provide configuration information to the application and are accessible during its execution.
+% Use environment variables to protect your secrets
 
-Environment variables are part of the operating system environment in which the Python program runs. They can store various types of information, such as paths to important directories, credentials, API keys, database connection strings, or any other configuration values used by the program.
+Environment variables are key-value pairs that provide configuration information to the application and are accessible during its execution. They are part of the operating system environment in which a Python program runs and can store various types of information that may be unique to a system, such as paths to important directories, credentials, API keys, database connection strings, or any other configuration values used by the program.
+
+Environment variables are set outside of the program, either through the operating system's command line interface, through a configuration file or, in the case of cloud environments, via a web interface. This post describes how Python programmers can use environment variables in their programs to improve their flexibility and security.
 
 <!--more-->
 
-# Accessing environment variables
-
-In Python programs, you access environment variables through the [*os* module in the Python Standard Library](https://docs.python.org/3/library/os.html#os.getenv), which provides functions for interacting with the operating system. 
-
-To get the value of an environment variable, use the `os.getenv()` function. For example:
-
-```python
-value = os.getenv("VARIABLE_NAME")
-```
-
-The `os.getenv()` function retrieves the value of the specified environment variable. If the variable doesn't exist, it returns `None`.
-
 # Why use environment variables
 
-There are good reasons to use environment variables instead of just hard coding program configuration information in your program's source code or in a separate configuration file. 
+There are good reasons to use environment variables instead of just hard coding program configuration information in your program's source code or in a separate configuration file. For individual Python programmers, the most relevant reasons are:
 
 1. Security
 
@@ -26,15 +16,15 @@ There are good reasons to use environment variables instead of just hard coding 
 
    Environment variables offer a more secure way to store the secrets your program needs to access sensitive resources like databases and APIs. Your program reads the secrets from its environment when the it runs
 
-2. Separates configuration from code
+2. Separation of configuration from code
 
-   Environment variables are set outside of the Python script, in the platform or operating system on which the program runs, so they provide a convenient way to manage configuration settings for Python programs. You can change configuration settings in the program's environment without modifying your source code. This makes it easy to deploy the program to different environments like development, test, or production, each of which may use different resources.
+   Environment variables are set outside of the Python script, in the platform or operating system on which the program runs, so they provide a convenient way to manage configuration settings for Python programs. You can change configuration settings in your environment without modifying your source code. This makes it easy to deploy a program to different environments like development, test, or production, each of which may use different resources.
 
 # How to set environment variables for your program
 
-Environment variables are typically stored outside the source code repository, and are set when operators set up the environment in which your python program is deployed. This can be automated on some platforms but individual developers will usually have to set environment variables themselves and [the procedure will be different](https://www.twilio.com/blog/how-to-set-environment-variables-html) for different operating systems or cloud platforms.
+Environment variables are usually set by system operators when they set up the environment in which your python program will be deployed. This process can be automated on some platforms. Individual developers will usually have to set environment variables on their own development systems and [the procedure will be different](https://www.twilio.com/blog/how-to-set-environment-variables-html) for different operating systems or cloud platforms.
 
-To keep from losing or forgetting secrets, developers will usually encrypt and store their program secrets in some type of digital vault like [Bitwarden](https://bitwarden.com/), [1Password](https://1password.com/), or [Vault](https://developer.hashicorp.com/vault/docs/what-is-vault) and then they nay manually assign those secrets to environment variables before they test their programs. 
+To keep from losing or forgetting secrets, developers will usually encrypt and store their program secrets in some type of digital vault like [Bitwarden](https://bitwarden.com/), [1Password](https://1password.com/), or [Vault](https://developer.hashicorp.com/vault/docs/what-is-vault) and then they may manually assign those secrets to environment variables before they test their programs. 
 
 If you plan to deploy your program in the cloud, you may store secrets in a tool like [Azure Key Vault](https://learn.microsoft.com/en-us/azure/key-vault/general/basic-concepts) or [Google Secrets Manager](https://cloud.google.com/architecture/security-foundations/keys-secret-management), which would then automatically set up environment variables when you deploy your program on their platforms.
 
@@ -55,7 +45,7 @@ Other programmers who may use your code still need to know which variables need 
 
 ## Install the *python-dotenv* package
 
-Install *python-dotenv* package in your virtual environment.
+Install *python-dotenv* package in your Python project's [virtual environment](https://realpython.com/python-virtual-environments-a-primer/).
 
 ```bash
 (env) $ pip install python-dotenv
@@ -63,9 +53,9 @@ Install *python-dotenv* package in your virtual environment.
 
 ## Create the *.env* file
 
-Next, create a two files named *.env* and *env.example* in the project's root folder. The contents of the *.env.example* file would look like the following and the contents of the *.env* file would have the same variable names, but contain the actual values needed for your program to work.
+Next, create two files named *.env* and *env.example* in the project's root folder. The contents of the *.env.example* file would look like the following and the contents of the *.env* file would have the same variable names, but contain the actual values needed for your program to work.
 
-```
+```bash
 DB_SERVER=server.name.com
 DB_NAME=database_name
 DB_UID=username
@@ -76,17 +66,17 @@ Save the files.
 
 ## Except *.env* files from source control
 
-Add ".env" to the *.gitignore* file in your project folder to ensure your secrets are not recorded in the Git database. This is a critical step required to protect your secrets. 
+If you use Git for source control, add ".env" to the *.gitignore* file in your project folder to ensure your secrets are not recorded in the Git database. If you use another source control system, use the appropriate method to ensure it does not copy the *.env* file into its database. This is a critical step required to protect your program's secrets. 
 
 # How to use environment variables in your program
 
-The *dotenv* module in the *[python-dotenv](https://pypi.org/project/python-dotenv/)* package offers you flexibility in handling environment variables. You may be operating in an environment in which the environment variables have already been set. If that is the case, the *dotenv* module will use the already-set environment variables and will not overwrite them with the values in the *.env* file, unless explicitly told to do so. 
+The *dotenv* module in the *[python-dotenv](https://pypi.org/project/python-dotenv/)* package offers you flexibility in handling environment variables in your Python programs. You may be operating in an environment in which the some environment variables have already been set. If that is the case, the *dotenv* module will use the already-set environment variables and will not overwrite them with the values in the *.env* file, unless explicitly told to do so. 
 
 ## Set environment variables at run time
 
-To use the environment variables in program, import the *dotenv.load_dotenv()* function into your program and call it.
+To use the environment variables from the *.env* file in your program, import the *dotenv.load_dotenv()* function into your program and call it.
 
-```
+```python
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -94,13 +84,13 @@ load_dotenv()
 
 The *Load_dotenv()* function exports the environment variables in the *.env* file into the program's environment, if they do not already exist. From this point on, you can read environment variables as you usually would, using the *os.getenv()* function.
 
-Normally, the *load_dotenv()* function will not overwrite existing environment variables. You may include the parameter *override=True* so that, if you already have environment variables configured of if you changed the values in your *.env* file, they will be changed when you call the *load_dotenv(override=True)* function. 
+Normally, the *load_dotenv()* function will not overwrite existing environment variables. You may include the parameter *override=True* so that, if you do not want to use environment variables that are already configured or if you recently changed their values in your *.env* file, they will be changed to match the new values from your *.env* file when you call the *load_dotenv(override=True)* function. 
 
-## Read environment variables
+# Accessing environment variables
 
-Use the *os.getenv()* builtin function in your program to get the value associated with each environment variable. 
+In Python programs, you access environment variables through the [*os* module in the Python Standard Library](https://docs.python.org/3/library/os.html#os.getenv), which provides functions for interacting with the operating system. 
 
-For example:
+Use the *os.getenv()* builtin function in your program to get the value associated with each environment variable. For example:
 
 ```python
 import os
@@ -111,7 +101,7 @@ DB_UID = os.getenv('DB_UID')
 DB_PWD = os.getenv('DB_PWD')
 ```
 
-Now you can use the values to run your program. For example, you might use the values from the above example to build a database connection string that enables you to access data from a database server.
+Now you can use the values you read from the environment variables in your program. For example, you might use the values from the above example to build a database connection string that enables you to access data from a database server.
 
 # Conclusion
 
