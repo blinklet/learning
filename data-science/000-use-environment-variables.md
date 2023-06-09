@@ -2,7 +2,7 @@
 
 Environment variables are key-value pairs that are are set outside of a Python program but may be accessed by the program during its execution. They are part of the operating system environment in which a Python program runs and are usually used to store information that is unique to a system, such as paths to important directories, credentials, API keys, database connection strings, or any other configuration values used by the program.
 
-If you use environment variables, you must set them before you execute your program. You may set them using the operating system's command line interface, by editing a configuration file or, in the case of cloud environments, via a web interface. This post describes how Python programmers can set and use environment variables in their programs to improve their code's flexibility and security.
+If you use environment variables, you must set them before you execute your program, using the operating system's command line interface, by editing a configuration file or, in the case of cloud-based platforms, via a web interface or API. To access environment variables in your programs, use functions like those in [Python's os module](https://docs.python.org/3/library/os.html). This post describes how Python programmers can set and use environment variables in their programs to improve their code's flexibility and security.
 
 <!--more-->
 
