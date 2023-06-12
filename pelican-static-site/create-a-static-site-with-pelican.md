@@ -1,3 +1,56 @@
+https://shahayush.com/2020/03/web-pelican-pt1-setup/
+
+learning how to use Pelican:
+
+Pelican docs
+https://docs.getpelican.com/en/3.6.3/index.htmlhttps://docs.getpelican.com/en/3.6.3/index.html
+
+"Build and Deploy a Website or Blog using Pelican" by Vimalkumar Velayudhan
+https://www.youtube.com/playlist?list=PLWtiSQ22KrCKwvkZ5iFzSL_SnHVN3LjMI
+
+"DragonPy Meetup August 2020 Roman Luštrik How I Automated my Deployment of Static Pages with Pelican"
+https://www.youtube.com/watch?v=T1tmZevDbtg&list=PL_UZskMt8L0UK6c0OUxl6FYsd40Drvwvn
+
+"Dr. Jekyll and Mr. Pelican: A Comparison of Static Site Generators" by Lucy Wyman
+https://www.youtube.com/watch?v=4Yonwd98XW8
+
+"Getting started with Pelican: A Python-based static site generator"
+https://opensource.com/article/19/1/getting-started-pelican
+
+"How to Create Your First Static Site with Pelican and Jinja2"
+https://www.fullstackpython.com/blog/generating-static-websites-pelican-jinja2-markdown.html
+
+
+* http://chdoig.github.io/create-pelican-blog.html
+* https://duncanlock.net/blog/2013/05/17/how-i-built-this-website-using-pelican-part-1-setup/
+* https://snipcart.com/blog/pelican-blog-tutorial-search-comments
+
+
+
+
+
+
+
+# Blog plan
+
+## Initial setup
+
+Using default themes, set up a blog and add a couple of posts. Add images and pages.
+
+Then discuss that, to go further, we need to pick a theme and some of our decisions (and Markdown syntax) will be determined by the theme we choose.
+
+
+## Themes
+maybe save themes for a separate post because there are three ways to set up themes
+
+1. Use the instructions in pelican-themes, where you use Git to copy the entire repo and point your config file to a specific folder
+2. Use `pelican-themes --install` to copy files to a theme folder in your virtuakl environment
+3. Manually ciopy theme file to a folder in the blog project (the folder is named "themes") and point to it in your config file
+  * I think the last option is best because, if you choose to modify the theme files, any changes you make are tracked in your own source control system. 
+  * You can also use themes that are not part of the pelican-themes project
+
+
+
 # Create a static web site with Pelican and Python
 
 [Pelican](https://getpelican.com/)
@@ -80,13 +133,9 @@ slug: use-environment-variables-python
 date: 2023-06-07
 modified: 2023-06-07
 
-# Use environment variables to protect your secrets
-
 Environment variables are key-value pairs that are are set outside of a Python program but may be accessed by the program during its execution.
 
-<!--more-->
-
-## Why use environment variables
+# Why use environment variables
 
 There are many reasons to use environment variables instead of just hard-coding program configuration information in your program's source code:
 
@@ -94,7 +143,7 @@ There are many reasons to use environment variables instead of just hard-coding 
 
    Normally, you do not want to reveal sensitive information like passwords, database credentials, or API keys to anyone who looks at your code. 
 
-## Conclusion
+# Conclusion
 
 This was a test created by copying content from one of my posts
 ```
@@ -110,63 +159,13 @@ and 0 draft pages in 0.09 seconds.
 
 ```bash
 (env) $ pelican --listen
-Serving site at: http://127.0.0.1:8000 - Tap CTRL-C to stop
-[22:42:13] INFO     "GET / HTTP/1.1" 200 -                         server.py:121
-           INFO     "GET /theme/css/main.css HTTP/1.1" 200 -       server.py:121
-           INFO     "GET /theme/css/reset.css HTTP/1.1" 200 -      server.py:121
-           INFO     "GET /theme/css/pygment.css HTTP/1.1" 200 -    server.py:121
-           INFO     "GET /theme/css/typogrify.css HTTP/1.1" 200 -  server.py:121
-           INFO     "GET /theme/css/fonts.css HTTP/1.1" 200 -      server.py:121
-           INFO     "GET /theme/fonts/Yanone_Kaffeesatz_400.woff   server.py:121
-                    HTTP/1.1" 200 -                                             
-           WARNING  Unable to find `/favicon.ico` or variations:       log.py:91
-                    /favicon.ico.html                                           
-                    /favicon.ico/index.html                                     
-                    /favicon.ico
 ```
 
 You see that the blog shows one post. 
 
 ![](./images/blog_test.png)
 
-I learned some things already. The Markdown "#" tag is no used as the top level title. The title is defined in the post metadata at the top of the file. So, I can use the "#" as a chapter title in the post.
-
 Hit CTRL-C to stop the server.
-
-Trying again with the following. Edit the *contents/use-environment-variables-python.md* file as follows:
-
-```
-title: Use environment variables to protect your secrets
-slug: use-environment-variables-python
-date: 2023-06-07
-modified: 2023-06-07
-
-Environment variables are key-value pairs that are are set outside of a Python program but may be accessed by the program during its execution.
-
-<!--more-->
-
-# Why use environment variables
-
-There are many reasons to use environment variables instead of just hard-coding program configuration information in your program's source code:
-
-1. Security
-
-   Normally, you do not want to reveal sensitive information like passwords, database credentials, or API keys to anyone who looks at your code. 
-
-# Conclusion
-
-This was a test created by copying content from one of my posts
-```
-
-Run the pelican command again:
-
-```bash
-(env) $ pelican
-(env) $ pelican --listen
-```
-
-The post looks better
-
 
 Now capture the image of the blog and save it in a new directory named *images* and put the screen capture in there. then add it to the blog post.
 
@@ -174,9 +173,33 @@ Now capture the image of the blog and save it in a new directory named *images* 
 
 Next, pick a theme for the blog. The default theme looks OK but bloggers like to customize the blog.
 
-Try the [*Flex* theme](https://github.com/alexandrevicenzi/Flex)
+Some themes I like are:
 
-https://docs.getpelican.com/en/latest/pelican-themes.html
+* [*Flex* theme](https://flex.alxd.me/)
+  * Simple to set up and looks good
+  * Mobile-first theme
+  * Author can configure dark or light mode
+  * Supports many plugins
+
+* [*Papyrus* theme](https://aleylara.github.io/Papyrus/)
+  * Supports viewer-configurable dark and light mode
+  * Supports many plugins
+  * Allows author to create summaries of posts on main page
+  * Looks good on mobile, also
+
+https://out-of-cheese-error.netlify.app/astrochelys#org2054e9a_1
+https://github.com/out-of-cheese-error/astrochelys
+
+https://github.com/arulrajnet/attila-demo
+https://arulrajnet.github.io/attila/
+
+
+
+
+
+Use the [pelican-themes](https://docs.getpelican.com/en/latest/pelican-themes.html) command
+
+First, see which themes already exit on your system:
 
 ```bash
 pelican-themes --list
@@ -186,6 +209,29 @@ notmyidea
 simple
 ```
 
+The default theme is *notmyidea*.
+
+To change themes, add a "THEME" line to the *pelicanconf.py* file. Add the following line to the end of the file:
+
+```
+THEME = 'simple'
+```
+
+Then run pelican again
+
+```bash
+(env) $ pelican
+(env) $ pelican --listen
+```
+
+You see the them changed to the *simple* theme.
+
+![](./images/theme_test.png)
+
+You can only switch to themes that are installed. To isnatll a theme, copy the theme files to a folder on your PC, usually to the *Downloads* folder. Then use the *pelican-themes* command to copy the theme files to the correct location on your system which is, by default, in your Python virtual environment.
+
+A good place to look for themes is the [Pelican Themes repository](https://github.com/getpelican/pelican-themes) on GitHub.
+
 install the "Flex" theme
 
 get v2.5 of the flex theme files
@@ -194,21 +240,52 @@ https://github.com/alexandrevicenzi/Flex/releases/tag/v2.5.0
 
 and store the archive on your PC in the Downloads folder
 
-uncompress the file
+uncompress the file so all the files are installed in a directory named Flex-2.5.0
 
-install
+```
+(env) $ cd ~/Downloads
+(env) $ wget https://github.com/alexandrevicenzi/Flex/archive/refs/tags/v2.5.0.zip
+(env) $ unzip v2.5.0.zip
+```
 
+Use *pelican-themes* to copy the files to the correct location
+
+```
 (env) $ pelican-themes --install ~/Downloads/Flex-2.5.0/
+```
 
+See that the new theme is installed
+
+```
 (env) $ pelican-themes --list
-
 Flex-2.5.0
 notmyidea
 simple
+```
+
+See the locations the themes are installed
+
+```
+(env) $ pelican-themes --list -v
+```
+
+```
+/home/brian/Projects/python-web-site/env/lib/python3.10/site-packages/pelican/themes/notmyidea
+/home/brian/Projects/python-web-site/env/lib/python3.10/site-packages/pelican/themes/simple
+/home/brian/Projects/python-web-site/env/lib/python3.10/site-packages/pelican/themes/Flex-2.5.0
+```
+
+You may delete the downloaded files if you want to save some space. They are not needed anymore
+
+```
+(env) $ rm v2.5.0.zip
+(env) $ rm -r Flex-2.5.0
+```
+
 
 Now switch to the Flex theme:
 
-Add the following line to pelicanconf.py
+Edit the following line in *pelicanconf.py*
 
 ```
 THEME = 'Flex-2.5.0'
@@ -220,6 +297,8 @@ Then run pelican again
 (env) $ pelican
 (env) $ pelican --listen
 ```
+
+When starting a Pelican-based blog, you will probably want to install multiple themes so you can experiment with the way your site looks,
 
 
 Customizing themes
