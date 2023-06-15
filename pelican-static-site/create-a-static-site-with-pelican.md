@@ -1,98 +1,40 @@
-https://shahayush.com/2020/03/web-pelican-pt1-setup/
+# Create a static web site using Pelican and Python
 
-learning how to use Pelican:
-
-Pelican docs
-https://docs.getpelican.com/en/3.6.3/index.htmlhttps://docs.getpelican.com/en/3.6.3/index.html
-
-"Build and Deploy a Website or Blog using Pelican" by Vimalkumar Velayudhan
-https://www.youtube.com/playlist?list=PLWtiSQ22KrCKwvkZ5iFzSL_SnHVN3LjMI
-
-"DragonPy Meetup August 2020 Roman Luštrik How I Automated my Deployment of Static Pages with Pelican"
-https://www.youtube.com/watch?v=T1tmZevDbtg&list=PL_UZskMt8L0UK6c0OUxl6FYsd40Drvwvn
-
-"Dr. Jekyll and Mr. Pelican: A Comparison of Static Site Generators" by Lucy Wyman
-https://www.youtube.com/watch?v=4Yonwd98XW8
-
-"Getting started with Pelican: A Python-based static site generator"
-https://opensource.com/article/19/1/getting-started-pelican
-
-"How to Create Your First Static Site with Pelican and Jinja2"
-https://www.fullstackpython.com/blog/generating-static-websites-pelican-jinja2-markdown.html
-
-
-* http://chdoig.github.io/create-pelican-blog.html
-* https://duncanlock.net/blog/2013/05/17/how-i-built-this-website-using-pelican-part-1-setup/
-* https://snipcart.com/blog/pelican-blog-tutorial-search-comments
-
-
-
-
-
-
-
-# Blog plan
-
-## Initial setup
-
-Using default themes, set up a blog and add a couple of posts. Add images and pages.
-
-Then discuss that, to go further, we need to pick a theme and some of our decisions (and Markdown syntax) will be determined by the theme we choose.
-
-
-## Themes
-maybe save themes for a separate post because there are three ways to set up themes
-
-1. Use the instructions in pelican-themes, where you use Git to copy the entire repo and point your config file to a specific folder
-2. Use `pelican-themes --install` to copy files to a theme folder in your virtuakl environment
-3. Manually ciopy theme file to a folder in the blog project (the folder is named "themes") and point to it in your config file
-  * I think the last option is best because, if you choose to modify the theme files, any changes you make are tracked in your own source control system. 
-  * You can also use themes that are not part of the pelican-themes project
-
-
-
-# Create a static web site with Pelican and Python
-
-[Pelican](https://getpelican.com/)
-
-There is a [great tutorial about using Pelican](https://www.fullstackpython.com/blog/generating-static-websites-pelican-jinja2-markdown.html) at the Full Stack Python blog.
+I created this site using [Pelican](https://getpelican.com/), a static site generation tool based on the [Python programming language](https://www.python.org/) and [Jinja2 templates](https://palletsprojects.com/p/jinja/). This post describes how to install and configure Pelican, and how to use Pelican plugins and themes to make the web site to look the way you want. In a future post, I will describe how I published the web site to a hosting provider.
 
 ## Install Pelican
 
+Install Pelican in a Python virtual environment. I like to create a virtual environment in the same directory as my project, but you may place it anywhere you like.
 
+In my case, I created a directory for my web site and created a virtual environment in it. My web site's name is "Learning with Code" so I named the project directory *learning-with-code*. You may choose any name you like.
 
-Create a directory for your web site and create a virtual environment
+Enter the following commands in a terminal window:
 
 ```bash
-$ mkdir my_web_site
-$ cd my_web_site
+$ mkdir learning-with-code
+$ cd learning-with-code
 $ pythons -m venv env
 $ source env/bin/activate
 (env) $
 ```
 
-Install Pelican with the Markdown [extras](https://stackoverflow.com/questions/46775346/what-do-square-brackets-mean-in-pip-install) enabled:
+Install Pelican in the virtual environment with the [Markdown](https://python-markdown.github.io/) [extras](https://stackoverflow.com/questions/46775346/what-do-square-brackets-mean-in-pip-install) enabled:
 
 ```bash
 (env) $ pip install "pelican[markdown]"
 ```
 
-## Initialize web site project
+## Initialize the web site project
+
+Run the *pelican-quickstart* command to create the initial files and subdirectories in the web site project. 
 
 ```bash
 (env) $ pelican-quickstart
 ```
 
-This script asks some questions and uses your answers to populate the configuration files. I already registered a URL for my web site so I answered "yes" when asked if I want to specify a URL prefix.  I found the correct responses to the question about time zones can be found in the [Wikipedia list of standard time zones](ttps://en.wikipedia.org/wiki/List_of_tz_database_time_zones). I will deploy my website to [Netlify](https://www.netlify.com/)(https://www.netlify.com/blog/2016/10/27/a-step-by-step-guide-deploying-a-static-site-or-single-page-app/) via a [GitHub integration](https://codelapan.com/post/how-to-upload-or-deploy-static-website-on-netlify) so I do not need to use Pelican to upload files so I answered "no" to the question asking me if I wanted to create a Makefile to automate publishing.
+This script asks some questions and uses your answers to populate the configuration files. In my case, I already registered a URL for my web site so I answered "yes" when asked if I want to specify a URL prefix.  I found the correct responses to the question about time zones can be found in the [Wikipedia list of standard time zones](ttps://en.wikipedia.org/wiki/List_of_tz_database_time_zones). I plan to deploy my website to [Cloudflare Pages](https://pages.cloudflare.com/), or a similar service, via a [GitHub integration](https://developers.cloudflare.com/pages/platform/git-integration) so I don't need Pelican to upload files for me. I answered "no" to the question asking me if I wanted to create a [makefile](https://www.gnu.org/software/make/manual/make.html) to automate publishing.
 
 ```bash
-Welcome to pelican-quickstart v4.8.0.
-
-This script will help you create a new Pelican-based website.
-
-Please answer the following questions so this script can generate the files
-needed by Pelican.
-    
 > Where do you want to create your new web site? [.] 
 > What will be the title of this web site? Learning with Code
 > Who will be the author of this web site? Brian Linkletter
@@ -103,144 +45,219 @@ needed by Pelican.
 > How many articles per page do you want? [10] 
 > What is your time zone? [Europe/Rome] America/Toronto
 > Do you want to generate a tasks.py/Makefile to automate generation and publishing? (Y/n) n
-Done. Your new project is available at /home/brian/Projects/python-web-site
+Done. Your new project is available at /home/brian/Projects/learning-with-code
 ```
 
-You can go back and edit the Pelican configuration file later if you need to change any settings. For example, I will have to update the configuration files when I decide the service to which I will upload my web site.
-
-If you look at the directory, you will see that the *pelican-quickstart* script created some new directories and configuration files.
+The *pelican-quickstart* script created some new directories and configuration files.
 
 ```python
 (env) $ ls
 content  env   output  pelicanconf.py  publishconf.py 
 ```
 
-The *content* directory will contain the blog posts. Each post will be a single markdown file. The *pelicanconf.py* and *publishconf.py* arte python scripts that generate configuration information. The *output* file will contain the files generated by Pelican that create the static website. Currently, it is empty.
+The *content* directory contains the source code for blog posts. Each post will be a single markdown file. You may store supporting files like images in directories inside the *content* directory. 
 
+The *output* directory will contain the files generated by Pelican that create the static website. Currently, it is empty. The *pelicanconf.py* file is a python scripts that generates configuration information. The *publishconf.py* file is an alternative settings file and is optional. You can go back and edit the Pelican configuration files later when you to add more functionality to your static web site.
 
-### Quick test
+### Create your first post
 
-Create a dummy blog post in the *content* directory to quickly check that the site is working
+To test the web site build process, create a dummy blog post in the *content* directory:
 
 ```bash
 (env) $ cd content
-(env) $ nano use-environment-variables-python.md
+(env) $ nano this-is-a-test-post.md
 ```
 
+Enter the following text into the file. You could enter any text you like but the [metatdata at the top of the post](https://docs.getpelican.com/en/latest/content.html#file-metadata) needs to be arranged similarly to my example, shown below: 
+
 ```
-title: Use environment variables to protect your secrets
-slug: use-environment-variables-python
+title: This is a test post
+slug: this-is-a-test-post
+summary: This test post should display a summary on the main page and show more detail when you click through to the actual post.
 date: 2023-06-07
 modified: 2023-06-07
 
-Environment variables are key-value pairs that are are set outside of a Python program but may be accessed by the program during its execution.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
-# Why use environment variables
+## Cursus euismod
 
-There are many reasons to use environment variables instead of just hard-coding program configuration information in your program's source code:
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.:
 
-1. Security
+1. Malesuada
 
-   Normally, you do not want to reveal sensitive information like passwords, database credentials, or API keys to anyone who looks at your code. 
+   Tellus integer feugiat scelerisque varius. Volutpat maecenas volutpat blandit aliquam etiam erat velit scelerisque. 
 
-# Conclusion
+## Conclusion
 
 This was a test created by copying content from one of my posts
 ```
 
+Save the file. Navigate back to the project's root folder:
+
+```bash
+(env) $ cd ..
+```
+
+### Build the site
+
+Run the `pelican` command to build the web site. If you used the `python-quickstart` command to set up your Pelican project, then the `pelican` command looks for posts and other source files in the *content* subdirectory. Since we are using the default subdirectory names created by `python-quickstart`, just run the simple command as shown below: 
+
 ```bash
 (env) $ pelican
-[22:40:11] WARNING  Watched path does not exist:                       log.py:91
-                    /home/brian/Projects/python-web-site/content/image          
-                    s                                                           
-Done: Processed 1 article, 0 drafts, 0 hidden articles, 0 pages, 0 hidden pages 
-and 0 draft pages in 0.09 seconds.
 ```
+
+In the terminal window, you will see the output indicating the web site has been built. Pelican generates the static web site files in the *output* subdirectory.
+
+### Serve the site
+
+Test the web site by running the `pelican` command with the `--listen` option.
 
 ```bash
 (env) $ pelican --listen
 ```
 
-You see that the blog shows one post. 
+The command output will display a URL you can use to test your web site in a web browser. Open a web browser and enter the URL. In my case, it is *http://127.0.0.1:8000*, which is TCP port 8000 on your's PC's local loopback address. The web site should look similar to the screenshot below:
 
-![](./images/blog_test.png)
+![](website.png)
 
-Hit CTRL-C to stop the server.
+Stop the server by entering the `CTRL-C` key combination in the terminal window.
 
-Now capture the image of the blog and save it in a new directory named *images* and put the screen capture in there. then add it to the blog post.
+The `pelican --listen` command started the [Python web server](https://docs.python.org/3/library/http.server.html) that served the web site's pages from the address *http://localhost:8000*. If Pelican creates a "static" web site, why do we need a web server?
 
-# Themes
+### Why run a web server?
 
-Next, pick a theme for the blog. The default theme looks OK but bloggers like to customize the blog.
+Because we are using the `pelican` command to generate our static files, the web site stills need to be presented through a web server that can [interpret the relative path names](https://superuser.com/questions/543744/can-static-websites-be-viewed-without-a-server/1008453#1008453) and find all the content on the site, like CSS files and images. Also, you need a web server to serve the site from a custom URL using [SSL encryption](https://www.cloudflare.com/learning/ssl/what-is-ssl/) so most static web sites will be served this way, anyway.
+
+If you want a truly "static" site that can be served from storage like [S3](https://aws.amazon.com/s3/) with no server then do not use the `pelican` command to generate your web site. Instead, follow the [instructions on the Pelican web site to create a Makefile and use the `invoke` command](https://docs.getpelican.com/en/latest/publish.html#automation) to run the appropriate publishing script for the type of storage you are using.
+
+Using the `pelican` command and the Python HTTP server works for us because we intend to publish this site to a hosting service like [Cloudflare pages](https://pages.cloudflare.com/) or [Netlify](https://www.netlify.com/), which uses the `pelican` command on their servers to build the site from the original source code and serves the site using a [static web server](https://medium.com/swlh/need-a-local-static-server-here-are-several-options-bbbe77e59a11). 
+
+
+
+
+## Site settings
+
+The `pelican-quickstart` script created a settings file named *pelicanconf.py*. Pelican reads this file every time you run the `pelican` command and uses its contents to set environment variables that can control how Pelican builds the static web site files.
+
+If you have already used the `pelican` command to build a web site, then you can view the Pelican settings by running the following command:
+
+```bash
+(env) $ pelican --print-settings
+```
+
+You will see a long list that shows the value assigned to each Pelican settings variable. You can find a [description of all the settings](https://docs.getpelican.com/en/latest/settings.html) on the Pelican wiki.
+
+There are many possible settings and only a few of them are set in the *pelicanconf.py* file.  The following list describes some of the settings that I configured in my settings file.
+:
+
+```PYTHON
+AUTHOR = 'Brian Linkletter'
+SITENAME = 'Learning with Code'
+SITEURL = 'https://learningwithcode.com'
+LINKS = (('My other blog', 'https://brianlinkletter.com/'),)
+SOCIAL = (("github", "https://github.com/blinklet"), ('linkedin', 'https://www.linkedin.com/in/brianlinkletter/'), ('twitter', 'http://twitter.com/belinkletter'),)
+STATIC_PATHS = ['images']
+PAGE_PATHS = ['pages']
+ARTICLE_PATHS = ['']
+SUMMARY_MAX_LENGTH = None
+TIMEZONE = 'America/Toronto'
+DEFAULT_LANG = 'en'
+DEFAULT_PAGINATION = 10
+RELATIVE_URLS = True
+DEFAULT_CATEGORY = 'Python'
+MARKDOWN = {'extension_configs': {'markdown.extensions.codehilite': {'css_class': 'highlight'}, 'markdown.extensions.extra': {}, 'markdown.extensions.meta': {}, 'markdown.extensions.admonition': {}, 'markdown.extensions.toc': {}}, 'output_format': 'html5'}
+OUTPUT_PATH = 'output/'
+PATH = 'content/'
+THEME = 'Flex-2.5.0'
+THEME_STATIC_DIR = 'theme'
+FEED_ATOM = None
+FEED_ATOM_URL = None
+FEED_RSS = None
+FEED_RSS_URL = None
+FEED_DOMAIN = None
+FEED_DOMAIN = SITEURL
+FEED_ALL_ATOM = 'feeds/all.atom.xml'
+CATEGORY_FEED_ATOM = 'feeds/%s.atom.xml'
+TRANSLATION_FEED_ATOM = None
+AUTHOR_FEED_ATOM = None
+AUTHOR_FEED_RSS = None
+```
+
+
+But you can specify another directory when you run the command, if you store your content in another directory or if the *PATH* variable is not defined in the *pelicanconf.py* file. 
+
+### Using alternative settings files
+
+** WRONG. I need a publish file so I can enable feds and set the site URL... **
+** import conf to publish, then override some variables **
+
+Pelican reads the variables defined in its settings file every time it builds the web site. The default settings file is *pelicanconf.py*. However, the `pelican-quickstart` script also created an alternative settings file named *publishconf.py*. The alternative file has some settings that would be appropriate for publishing the site to a host site.
+
+To build your static site with an alternative settings file, run the `pelican` command with the `--settings` option and pass in the alternative file path.
+
+```bash
+(env) $ pelican --settings ./publishconf.py
+```
+
+Personally, I have not found a use for maintaining multiple settings files, except when I want to experiment with different settings. You may delete the *publishconf.py* file from your project directory, if you want.
+
+## Themes
+
+Next, pick a theme for your blog. The default theme looks OK but bloggers like to customize their blogs.
+
+Pelican themes consist of templates and CSS files stored in a directory. To change the web site theme, set the *THEME* variable in the *pelicanconf.py* file to point to the directory containing your theme files. 
+
+### Where to find themes
+
+The Pelican project team maintains a [GitHub repository that points to many available Pelican themes](https://github.com/getpelican/pelican-themes). You can also search the Internet for Pelican themes that are not tracked in the *pelican-themes* GitHub repository.
 
 Some themes I like are:
 
 * [*Flex* theme](https://flex.alxd.me/)
-  * Simple to set up and looks good
-  * Mobile-first theme
-  * Author can configure dark or light mode
-  * Supports many plugins
-
 * [*Papyrus* theme](https://aleylara.github.io/Papyrus/)
-  * Supports viewer-configurable dark and light mode
-  * Supports many plugins
-  * Allows author to create summaries of posts on main page
-  * Looks good on mobile, also
+* [*Attila* theme](https://github.com/arulrajnet/attila-demo)
+* [*Astrochelys* theme](https://github.com/out-of-cheese-error/astrochelys)
 
-https://out-of-cheese-error.netlify.app/astrochelys#org2054e9a_1
-https://github.com/out-of-cheese-error/astrochelys
+### How to install themes
 
-https://github.com/arulrajnet/attila-demo
-https://arulrajnet.github.io/attila/
+There are three ways to set up themes on your system:
 
+1. Use the [instructions in the *pelican-themes* repository](https://github.com/getpelican/pelican-themes#pelican-themes), which tell you to use Git to copy the entire repository to a directory on your local machine and point the THEME variable in your config file to a specific folder in the repo directory.
+2. Use the `pelican-themes --install` command to copy files to a theme folder in your Python virtual environment's Pelican package directory. Then point the THEME variable in your config file to the name of the theme. You do not need to specify the path to the theme folder. 
+3. Manually copy the theme files to a directory named *themes* at the root level of your blog project and point to it in your config file. You might use this method if you want to track changes to your theme files in your source control system.
 
+When starting a Pelican-based blog, you will probably want to install multiple themes so you can experiment with the way your site looks so I prefer the second method listed above. I find themes I want to try and copy them from their author's web sites or repositories. This way, I can also download and install themes that are not part of the pelican-themes repository.
 
-
-
-Use the [pelican-themes](https://docs.getpelican.com/en/latest/pelican-themes.html) command
-
-First, see which themes already exit on your system:
+First, use the [`pelican-themes -l`](https://docs.getpelican.com/en/latest/pelican-themes.html) command to see which themes already exist on your system:
 
 ```bash
-pelican-themes --list
+(env) $ pelican-themes --list
 ```
+
+Pelican comes with two themes as part of its standard installation. 
+
 ```
 notmyidea
 simple
 ```
 
-The default theme is *notmyidea*.
-
-To change themes, add a "THEME" line to the *pelicanconf.py* file. Add the following line to the end of the file:
-
-```
-THEME = 'simple'
-```
-
-Then run pelican again
+You can verify the theme used by your blog using the `pelican --print-settings` command:
 
 ```bash
-(env) $ pelican
-(env) $ pelican --listen
+(env) $ pelican --print-settings THEME
 ```
 
-You see the them changed to the *simple* theme.
+This will display the actual value of the THEME variable used by Pelican:
 
-![](./images/theme_test.png)
+```
+THEME: '/home/brian/Projects/learning-with-code/env/lib/python3.10/site-packages/pelican/themes/notmyidea'
+```
 
-You can only switch to themes that are installed. To isnatll a theme, copy the theme files to a folder on your PC, usually to the *Downloads* folder. Then use the *pelican-themes* command to copy the theme files to the correct location on your system which is, by default, in your Python virtual environment.
+### Install the "Flex" theme
 
-A good place to look for themes is the [Pelican Themes repository](https://github.com/getpelican/pelican-themes) on GitHub.
+As an example, I will change the blog theme to the Flex theme. To install the Flex theme, go to the Flex theme's GitHub repository and click on the [Tags](https://github.com/alexandrevicenzi/Flex/tags) link. Take the latest stable release, which is 2.5.0 at the time I wrote this post.
 
-install the "Flex" theme
-
-get v2.5 of the flex theme files
-
-https://github.com/alexandrevicenzi/Flex/releases/tag/v2.5.0
-
-and store the archive on your PC in the Downloads folder
-
-uncompress the file so all the files are installed in a directory named Flex-2.5.0
+Download and uncompress the release archive so all the files are installed in a directory named Flex-2.5.0.
 
 ```
 (env) $ cd ~/Downloads
@@ -248,13 +265,13 @@ uncompress the file so all the files are installed in a directory named Flex-2.5
 (env) $ unzip v2.5.0.zip
 ```
 
-Use *pelican-themes* to copy the files to the correct location
+Use the `pelican-themes -i` command to copy the files to the Pelican install in your Python packages directory.
 
 ```
 (env) $ pelican-themes --install ~/Downloads/Flex-2.5.0/
 ```
 
-See that the new theme is installed
+See that the new theme is installed:
 
 ```
 (env) $ pelican-themes --list
@@ -263,74 +280,78 @@ notmyidea
 simple
 ```
 
-See the locations the themes are installed
+See the actual paths to the theme folders in your Python environment:
 
 ```
-(env) $ pelican-themes --list -v
+(env) $ pelican-themes --list --verbose
 ```
 
+The output lists the absolute path of each theme installed using the pelican-themes command. You can see they are all installed in the *site-packages/pelican/themes* subdirectory in your Python environment.
+
 ```
-/home/brian/Projects/python-web-site/env/lib/python3.10/site-packages/pelican/themes/notmyidea
-/home/brian/Projects/python-web-site/env/lib/python3.10/site-packages/pelican/themes/simple
-/home/brian/Projects/python-web-site/env/lib/python3.10/site-packages/pelican/themes/Flex-2.5.0
+/home/brian/Projects/learning-with-code/env/lib/python3.10/site-packages/pelican/themes/notmyidea
+/home/brian/Projects/learning-with-code/env/lib/python3.10/site-packages/pelican/themes/simple
+/home/brian/Projects/learning-with-code/env/lib/python3.10/site-packages/pelican/themes/Flex-2.5.0
 ```
 
-You may delete the downloaded files if you want to save some space. They are not needed anymore
+You may delete the theme archive you originally downloaded if you want to save some space. They are not needed anymore.
 
 ```
 (env) $ rm v2.5.0.zip
 (env) $ rm -r Flex-2.5.0
 ```
 
-
-Now switch to the Flex theme:
-
-Edit the following line in *pelicanconf.py*
+Now switch to the Flex theme by editing or adding the *THEME* variable in the *pelicanconf.py* file:
 
 ```
 THEME = 'Flex-2.5.0'
 ```
 
-Then run pelican again
+You did not have to enter the full path to the theme directory (although that would work) because the theme directory is installed in Pelican's default themes directory. So, you just assign the name of the installed theme to the *THEME* variable.
+
+Save the file. Then run pelican again
 
 ```bash
 (env) $ pelican
 (env) $ pelican --listen
 ```
 
-When starting a Pelican-based blog, you will probably want to install multiple themes so you can experiment with the way your site looks,
+When you open the URL *http://localhost:8000* in your web browser, you can see the theme has changed. 
 
+![](./Images/flex-theme.png)
 
-Customizing themes
-https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/
+### Configure a new theme
 
-https://geekyshacklebolt.wordpress.com/2020/08/18/how-to-use-a-custom-pelican-blog-theme/
+To get the most out of a new theme, you need to change more than just the value of the *THEME* variable. Most themes are configured by adding additional theme-specific variables to the *pelicanconf.py* file. 
 
-Look at customization options for Flex them
+Read the documentation provided by the theme's author. For example, the [Flex theme's documentation](https://github.com/alexandrevicenzi/Flex/wiki/Custom-Settings) lists all the variables that you can use to change the look and function of the Flex theme.
 
-https://github.com/alexandrevicenzi/Flex/wiki/Custom-Settings
+For example, setting the *USE_GOOGLE_FONTS* variable to *True* or *False* enables or disables use of Google Fonts. If you care about your users' privacy, you may want to disable Google Fonts.
 
-You need to add more to the pelicanconf.py file to get a more fine-tunes look
+```python
+from datetime import datetime
 
-
-
-## Images
-
-How to add images to posts. images directory
-
-## Pages or posts
-
-What if I want pages? Like an "about" page
-
-
-
-
-## Publishing
-
-Add publishing info to settings
-
-https://docs.getpelican.com/en/latest/publish.html
-https://docs.getpelican.com/en/latest/settings.html
-
-
-
+SITELOGO = ''
+FAVICON = ''
+SITESUBTITLE = 'Learning how to use Python for work and for fun'
+SITEDESCRIPTION = 'Learning how to use Python for work and for fun: Data science, networking, internet of things'
+USE_GOOGLE_FONTS = True
+BROWSER_COLOR = '#333333'
+PYGMENTS_STYLE = 'monokai'
+MAIN_MENU = True
+MENUITEMS = (
+    ("Categories", "/categories.html"),
+)
+COPYRIGHT_YEAR = datetime.now().year
+CC_LICENSE = {
+    "name": "Creative Commons Attribution-ShareAlike 4.0 International License",
+    "version": "4.0",
+    "slug": "by-sa",
+    "icon": True,
+    "language": "en_US",
+}
+HOME_HIDE_TAGS = True
+DISABLE_URL_HASH = True
+THEME_COLOR_AUTO_DETECT_BROWSER_PREFERENCE = True
+THEME_COLOR_ENABLE_USER_OVERRIDE = True
+```

@@ -208,22 +208,15 @@ I was surprised they only support a version of Python that is so old but I tried
 
 ## Deploy
 
-Finally, click *Save and Deploy* at teh bottom of the page to complete the setup.
+Finally, click *Save and Deploy* at the bottom of the page to complete the setup.
 
 From this point on, Cloudflare will watch your GitHub repository and will re-build and re-deploy the web site every time you push any changes up to the Github repository.
 
 
-# Custom domain setup
 
-I purchase and manage my domains using [hover.com](https://www.hover.com). Hover offers an easy-to-use domain fowarding service. But, in this example, I will use the more standard method of modifying DNS information.
+# Conclusion
 
-Cloudflare wrote a good document that tells you [how to modify your domain provider's and Cloudflare's DNS information](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/) so that a URL managed by another provider will point to a Cloudflare Pages site.
+Now, my web site is set up and ready to serve.
 
+Next I will set up a custom domain so I can use a domain name of my choice, instead of the domain *pages.dev*.
 
-
-
-https://dev.to/nickymarino/pointing-a-github-pages-repo-to-a-hover-domain-105e
-https://terabytetiger.com/lessons/website-deployment-with-hover-and-netlify
-
-
-# Add post to web site
