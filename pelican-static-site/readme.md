@@ -4,13 +4,14 @@ learningwithcode.com
 [Pelican](https://getpelican.com/)
 [Flex theme](https://github.com/alexandrevicenzi/Flex)
 
+To do:
+Add multiple categories plugin and write about it
+https://github.com/pelican-plugins/more-categories
+
 
 Articles to convert
 
-* [Python for network engineers: a fast track guide](https://www.brianlinkletter.com/2018/08/python-seven-simple-things-network-engineers-need-to-know/)
-* [Python: The Minimum You Need to Know](https://www.brianlinkletter.com/2020/09/python-the-minimum-you-need-to-know/)
-* [A Python learning path for network engineers](https://www.brianlinkletter.com/2020/11/a-python-learning-path-for-network-engineers/)
-* [Flask web app tutorial for network engineers](https://www.brianlinkletter.com/2020/12/flask-web-app-tutorial-for-network-engineers/)
+(https://www.brianlinkletter.com/2020/12/flask-web-app-tutorial-for-network-engineers/)
 * [azruntime: Manage Azure Infrastructure with Python](https://www.brianlinkletter.com/2021/02/azruntime-manage-azure-infrastructure-with-python/)
 * [Install azruntime as a CLI program using pipx](https://www.brianlinkletter.com/2021/02/install-azruntime-as-a-cli-program-using-pipx/)
 * [Using the Python Rich library to display status indicators](https://www.brianlinkletter.com/2021/03/using-python-rich-library-status-module/)
