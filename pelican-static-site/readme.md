@@ -8,15 +8,6 @@ To do:
 Add multiple categories plugin and write about it
 https://github.com/pelican-plugins/more-categories
 
-
-Articles to convert
-
-(https://www.brianlinkletter.com/2020/12/flask-web-app-tutorial-for-network-engineers/)
-* [azruntime: Manage Azure Infrastructure with Python](https://www.brianlinkletter.com/2021/02/azruntime-manage-azure-infrastructure-with-python/)
-* [Install azruntime as a CLI program using pipx](https://www.brianlinkletter.com/2021/02/install-azruntime-as-a-cli-program-using-pipx/)
-* [Using the Python Rich library to display status indicators](https://www.brianlinkletter.com/2021/03/using-python-rich-library-status-module/)
-* [Learning to use Python classes](https://www.brianlinkletter.com/2023/02/learn-python-classes/)
-
 New articles to write
 
 * Create a sample database using MS Azure and SQL Server
