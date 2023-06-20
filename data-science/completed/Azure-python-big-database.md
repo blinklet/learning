@@ -177,9 +177,9 @@ Import the *pyodbc* module and create a database connection string that you can 
 ```python
 import pyodbc
 
-server = 'hraap-euw-prod-asq01.database.windows.net'
-database = 'hraap-euw-db01'
-username ='brian.linkletter@nokia.com'
+server = 'servername.database.windows.net'
+database = 'dbname'
+username ='brian.linkletter@gmail.com'
 Authentication='ActiveDirectoryInteractive'
 driver= '{ODBC Driver 18 for SQL Server}'
 
