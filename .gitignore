@@ -79,6 +79,10 @@ target/
 .ipynb_checkpoints
 .ipynb
 data-science/*.ipynb
+data-science/notebooks/*.ipynb
+*.ipynb
+data-science/notebooks/*
+*/notebooks
 
 # IPython
 profile_default/
@@ -184,3 +188,4 @@ Trash/
 *.docx
 *.xls
 *.xlsx
+
