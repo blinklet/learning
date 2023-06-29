@@ -1,0 +1,2 @@
+$Env:http_proxy="caottx01-proxy001.americas.nsn-net.net:8080"
+$Env:https_proxy="caottx01-proxy001.americas.nsn-net.net:8080"
