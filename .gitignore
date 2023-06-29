@@ -167,6 +167,8 @@ cython_debug/
 
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
+data-science/notebooks/hrdp-python.ipynb
+hrdp-python.ipynb
 
 # IPython
 profile_default/
