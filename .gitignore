@@ -83,6 +83,8 @@ data-science/notebooks/*.ipynb
 *.ipynb
 data-science/notebooks/*
 */notebooks
+./data-science/notebooks/hrdp-python.ipynb
+hrdp-python.ipynb
 
 # IPython
 profile_default/
@@ -188,4 +190,8 @@ Trash/
 *.docx
 *.xls
 *.xlsx
+
+# dotenv files
+.env2
+.env*
 
