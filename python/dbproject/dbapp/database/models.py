@@ -1,9 +1,11 @@
-from . import database
+from . import connect
 from sqlalchemy import Integer, String, UnicodeText
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import mapped_column
 
+Base = declarative_base()
 
-class Userdata(database.Base):
+class Userdata(Base):
     __tablename__ = "userdata"
 
     id = mapped_column(Integer, primary_key=True)
@@ -13,8 +15,10 @@ class Userdata(database.Base):
     def __repr__(self):
         return(self.user_name, self.user_data)
 
+
 def db_setup():
-    database.Base.metadata.create_all(database.engine)
+    Base.metadata.create_all(connect.engine)
+
 
 if __name__ == "__main__":
     db_setup()

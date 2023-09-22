@@ -3,6 +3,10 @@ Python package structure recommendation
 https://docs.python-guide.org/writing/structure/
 https://kennethreitz.org/essays/2013/01/27/repository-structure-and-python
 
+Good post on importing
+import submodules in __init__.py to make them importable from other packages (See Numpy example in:)
+https://note.nkmk.me/en/python-import-usage/#packages
+
 
 SQLAlchemy
 
@@ -12,7 +16,27 @@ SQLAlchemy
 https://www.youtube.com/watch?v=XWtj4zLl_tg
 
 
+where to create session?
+"ourside" functions that use it
+see: 
 
+used sessionmaker to get automatic connection management
+https://docs.sqlalchemy.org/en/20/orm/session_basics.html#using-a-sessionmaker
+use session.begin method
+
+from:  https://docs.sqlalchemy.org/en/20/orm/session_basics.html#using-a-sessionmaker
+"When you write your application, the sessionmaker factory should be scoped the same as the Engine object created by create_engine(), which is typically at module-level or global scope. As these objects are both factories, they can be used by any number of functions and threads simultaneously."
+where?
+https://docs.sqlalchemy.org/en/20/orm/session_basics.html#when-do-i-construct-a-session-when-do-i-commit-it-and-when-do-i-close-it
+
+
+how to update a row using ORM instead of "query" class
+https://docs.sqlalchemy.org/en/20/orm/queryguide/dml.html#orm-update-and-delete-with-custom-where-criteria
+
+query class is deprecated
+https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html
+"In the SQLAlchemy 2.x series, SQL SELECT statements for the ORM are constructed using the same select() construct as is used in Core, which is then invoked in terms of a Session using the Session.execute() method (as are the update() and delete() constructs now used for the ORM-Enabled INSERT, UPDATE, and DELETE statements feature). However, the legacy Query object, which performs these same steps as more of an “all-in-one” object, continues to remain available as a thin facade over this new system, to support applications that were built on the 1.x series without the need for wholesale replacement of all queries. For reference on this object, see the section Legacy Query API."
+also see: https://docs.sqlalchemy.org/en/20/orm/queryguide/query.html#legacy-query-api
 
 
 Running a Python program using "python x.py" and "python -m x" can yield different results because they use different ways to execute Python code and have different implications for how modules and packages are treated. Here's an explanation of the differences:

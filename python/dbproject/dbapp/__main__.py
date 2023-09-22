@@ -1,5 +1,8 @@
 from .interface import cli
-from .dbsetup import models
+from .database.models import db_setup
+from .database.connect import Session
 
-models.db_setup()
-cli.main()
+db_setup()
+
+with Session.begin() as session:
+    cli.main(session)
