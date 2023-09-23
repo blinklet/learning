@@ -8,6 +8,13 @@ import submodules in __init__.py to make them importable from other packages (Se
 https://note.nkmk.me/en/python-import-usage/#packages
 
 
+with relative imports and packages with blank __init__.py files, "python -m dbapp" works but "python dbapp/__main__.py" fails due to " ImportError: attempted relative import with no known parent package "
+
+
+
+
+
+
 SQLAlchemy
 
 [declarative mapping](https://docs.sqlalchemy.org/en/20/orm/mapping_styles.html#orm-declarative-mapping)

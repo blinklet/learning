@@ -1,4 +1,4 @@
-from .interface import cli
+from interface import cli
 from .database.models import db_setup
 from .database.connect import Session
 
