@@ -1,4 +1,4 @@
-from functions import func1
+from project2.functions import func1
 
 def main():
     print(func1("test"))

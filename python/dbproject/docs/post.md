@@ -4,7 +4,7 @@ https://docs.python-guide.org/writing/structure/
 https://kennethreitz.org/essays/2013/01/27/repository-structure-and-python
 
 Good post on importing
-import submodules in __init__.py to make them importable from other packages (See Numpy example in:)
+import submodules in \_\_init\_\_.py to make them importable from other packages (See Numpy example in:)
 https://note.nkmk.me/en/python-import-usage/#packages
 
 another good post on importing
@@ -21,7 +21,7 @@ https://ioflood.com/blog/python-import-from-another-directory/
 
 https://peps.python.org/pep-0420/
 
-with relative imports and packages with blank __init__.py files, "python -m dbapp" works but "python dbapp/__main__.py" fails due to " ImportError: attempted relative import with no known parent package "
+with relative imports and packages with blank \_\_init\_\_.py files, "python -m dbapp" works but "python dbapp/\_\_main\_\_.py" fails due to " ImportError: attempted relative import with no known parent package "
 
 
 From chatgpt:
@@ -69,7 +69,7 @@ Consider your project's specific needs and whether you anticipate collaborating 
 # Python scripts
 
 * Modules in one directory; no sub-directories
-* No __init__.py file
+* No \_\_init\_\_.py file
 * One file contains the main logic, other modules contain functions
 
 ```
@@ -129,7 +129,7 @@ test by func1
 
 ## Python package (normal)
 
-Add an empty file named *__init__.py* and the project directory becomes a *package*. Changes the way imports work. Now you need "relative" or "absolute" imports.
+Add an empty file named *\_\_init\_\_.py* and the project directory becomes a *package*. Changes the way imports work. Now you need "relative" or "absolute" imports.
 
 ```
 project2
@@ -163,7 +163,9 @@ test by func1
 
 Seems to work the same as normal script modules.
 
-To make the case of `python3 -m project2.program` work, you need to use relative imports. __init__.py tells python taht relative imports are allowed.
+### Relative imports
+
+To make the case of `python3 -m project2.program` work, you need to use relative imports. *\_\_init\_\_.py* tells python that relative imports are allowed. Also the `python -m` flag tells Python that relative imports are allowed. Relative imports will not wotk when running as a script with `python program.py`
 
 Change *program.py* to:
 
@@ -186,10 +188,10 @@ $ python3 -m project2.program
 test by func1
 ```
 
-The directory *project2* is now a *package* and Python searches for modules starting from teh directory containing the *project* package directory, not from the *project2* directory, itself.
+The directory *project2* is now a *package* and Python searches for modules starting from the directory containing the *project* package directory, not from the *project2* directory, itself.
 ???
 
-But the program can no longer be run as a Python script. It must be run as a module with the `-m` flag:
+But the program can no longer be run as a Python script. It must be run as a module with the `-m` flag and it must be run as a package: identified as `project2`:
 
 ```
 $ python3 project2/program.py
@@ -220,7 +222,47 @@ ImportError: attempted relative import with no known parent package
 
 ## Namespace package
 
+You need to keep in mind how you will distribute the program. If you intend to "package" it using something like *setuptools*, then you may need to be careful about the metatdata you generate for the packaging process.
+adding some code to the \_\_init\_\_.py file to initialize the Python search path to include the package directory
 
+*\_\_init\_\_.py* would contain:
+
+```
+from pathlib import Path
+import  sys
+
+print(Path(__file__).parents[0])
+path_root = Path(__file__).parents[0]
+sys.path.append(str(path_root))
+print(sys.path)
+```
+
+Now all types of launches run 
+
+```
+$ cd project2
+$ python3 -m program.py
+test by func1
+```
+```
+$ python3 program.py
+test by func1
+```
+```
+$ cd ..
+$ python -m project2.program
+C:\Users\blinklet\Documents\learning\python\imports\project2
+test by func1
+```
+
+**(Note, the above call to the *project2.program* module caused the */_/_init.py/_/_* code to ruin. None of the other launches started the init file.)**
+
+```
+$ python3 project2/program.py
+test by func1
+```
+
+So, that's one way to make package module imports work for all cases
 
 
 
@@ -268,13 +310,13 @@ Running a Python program using "python x.py" and "python -m x" can yield differe
    - When you run "python -m x," you are telling Python to run the module named "x" as a script.
    - In this case, "x" should be a Python package or a module that can be imported.
    - Python will search for the "x" module/package in its module search path, including the current directory.
-   - It treats "x" as a package or module and executes the code in the "__main__.py" file inside the "x" package (if it exists), or it runs the module "x" directly if there is no "__main__.py" file.
+   - It treats "x" as a package or module and executes the code in the "\_\_main\_\_.py" file inside the "x" package (if it exists), or it runs the module "x" directly if there is no "\_\_main\_\_.py" file.
    - This method is often used for running packages or modules within a larger Python project.
 
 Key Differences:
 - The "python -m x" method is typically used for structured Python projects where you want to utilize packages and modules, while "python x.py" is often used for standalone scripts.
 - Using "python -m x" allows you to avoid issues related to naming conflicts with other scripts or modules in the same directory or on the Python path.
-- When using "python -m x," the "__name__" attribute of the script/module will be "__main__," just like when running a standalone script, so you can still use conditional logic based on "__name__" to control script behavior.
+- When using "python -m x," the "\_\_name\_\_" attribute of the script/module will be "\_\_main\_\_," just like when running a standalone script, so you can still use conditional logic based on "\_\_name\_\_" to control script behavior.
 
 In summary, the choice between "python x.py" and "python -m x" depends on the structure and purpose of your Python code. If it's a simple standalone script, "python x.py" is sufficient. If you're working with modules and packages in a more complex project, "python -m x" is a better choice for running your code as a module.
 
