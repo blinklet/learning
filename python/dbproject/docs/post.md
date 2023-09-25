@@ -7,8 +7,218 @@ Good post on importing
 import submodules in __init__.py to make them importable from other packages (See Numpy example in:)
 https://note.nkmk.me/en/python-import-usage/#packages
 
+another good post on importing
+https://fortierq.github.io/python-import
+sys.path seems a clunky solution... may be useful when writing tests, though
+relative paths
+do you intend to build/install or run as script?
+
+see also
+https://blog.finxter.com/python-how-to-import-modules-from-another-folder/
+https://ioflood.com/blog/python-import-from-another-directory/
+
+"namespace packages" are the new tech, but may create confusion and seem best for advanced cases where sub-packages are distributed across different directories in teh filesystem and will be "re assembled" at run time
+
+https://peps.python.org/pep-0420/
 
 with relative imports and packages with blank __init__.py files, "python -m dbapp" works but "python dbapp/__main__.py" fails due to " ImportError: attempted relative import with no known parent package "
+
+
+From chatgpt:
+
+Whether you should use namespace packages or regular packages in your Python project depends on your project's specific requirements and goals. Both namespace packages and regular packages have their use cases, and understanding the differences between them can help you make an informed decision.
+
+1. Regular Packages:
+   - Regular packages are the most common type of packages in Python.
+   - They are used when you want to organize your code into hierarchical directories and create a clear package structure.
+   - Regular packages are self-contained and can include modules (Python files) and sub-packages (nested directories with an `__init__.py` file).
+   - They provide strong encapsulation, meaning that each regular package is its own namespace, and names within the package do not collide with names in other packages.
+
+   Example:
+   ```
+   mypackage/
+       __init__.py
+       module1.py
+       module2.py
+       subpackage/
+           __init__.py
+           module3.py
+   ```
+
+2. Namespace Packages:
+   - Namespace packages are used when you want to split a package across multiple directories or when you want to extend an existing package without modifying its source code.
+   - They are more suitable for scenarios where you have multiple packages that share a common namespace and you want to merge them dynamically.
+   - Namespace packages do not contain any actual code or `__init__.py` files. They are created by declaring a shared namespace in one or more distribution packages.
+   - Names within a namespace package can be spread across multiple locations, and they are merged at runtime.
+
+   Example (project structure with namespace packages):
+   ```
+   mynamespacepackage/
+       subpackage1/
+           module1.py
+       subpackage2/
+           module2.py
+   ```
+
+In summary, if you are building a self-contained package with a clear structure and want strong encapsulation, regular packages are a good choice. On the other hand, if you need to extend or split a package dynamically across multiple directories or collaborate on a shared namespace with other packages, namespace packages might be more appropriate.
+
+Consider your project's specific needs and whether you anticipate collaborating with other packages or distributing your code as part of a larger ecosystem when deciding whether to use regular packages or namespace packages.
+
+
+
+# Python scripts
+
+* Modules in one directory; no sub-directories
+* No __init__.py file
+* One file contains the main logic, other modules contain functions
+
+```
+project1
+├── functions.py
+└── program.py
+```
+
+functions.py:
+
+```
+def func1(message)
+    return message + " by func1"
+```
+
+program.py
+
+```
+import functions
+
+def main():
+    print(functions.func1("test"))
+
+if __name__ == "__main__":
+    main()
+```
+
+Run from project directory:
+
+```
+$ cd project1
+$ python3 -m program
+test by func1
+```
+
+```
+$ python3 program.py
+test by func1
+```
+
+Run from another directory
+
+```
+$ cd ..
+$ python3 -m project1.program
+Traceback (most recent call last):
+...
+  File "/home/brian/Projects/learning/python/imports/project1/program.py", line 1, in <module>
+    import functions
+ModuleNotFoundError: No module named 'functions'
+```
+
+```
+$ python3 project1/program.py
+test by func1
+```
+
+## Python package (normal)
+
+Add an empty file named *__init__.py* and the project directory becomes a *package*. Changes the way imports work. Now you need "relative" or "absolute" imports.
+
+```
+project2
+├── functions.py
+├── __init__.py
+└── program.py
+```
+
+```
+$ cd project2
+$ python3 -m program.py
+test by func1
+```
+```
+$ python3 program.py
+test by func1
+```
+```
+$ cd ..
+$ python3 -m project2.program
+Traceback (most recent call last):
+...
+  File "/home/brian/Projects/learning/python/imports/project2/program.py", line 1, in <module>
+    import functions
+ModuleNotFoundError: No module named 'functions'
+```
+```
+$ python3 project2/program.py
+test by func1
+```
+
+Seems to work the same as normal script modules.
+
+To make the case of `python3 -m project2.program` work, you need to use relative imports. __init__.py tells python taht relative imports are allowed.
+
+Change *program.py* to:
+
+```
+from . import functions
+
+def main():
+    print(functions.func1("test"))
+
+if __name__ == "__main__":
+    main()
+```
+
+The import line was changed to `from . import functions`.
+
+Now, the following works:
+
+```
+$ python3 -m project2.program
+test by func1
+```
+
+The directory *project2* is now a *package* and Python searches for modules starting from teh directory containing the *project* package directory, not from the *project2* directory, itself.
+???
+
+But the program can no longer be run as a Python script. It must be run as a module with the `-m` flag:
+
+```
+$ python3 project2/program.py
+Traceback (most recent call last):
+  File "/home/brian/Projects/learning/python/imports/project2/program.py", line 1, in <module>
+    from . import functions
+ImportError: attempted relative import with no known parent package
+```
+```
+$ cd project2
+$ python3 program.py
+Traceback (most recent call last):
+  File "/home/brian/Projects/learning/python/imports/project2/program.py", line 1, in <module>
+    from . import functions
+ImportError: attempted relative import with no known parent package
+```
+```
+$ python3 -m program
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/brian/Projects/learning/python/imports/project2/program.py", line 1, in <module>
+    from . import functions
+ImportError: attempted relative import with no known parent package
+```
+
+## Namespace package
 
 
 
