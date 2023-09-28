@@ -1,7 +1,7 @@
-import functions.functions
+from .functions import functions
 
 def main():
-    print(functions.functions.func1("test"))
+    print(functions.func1("test"))
 
 if __name__ == "__main__":
     main()

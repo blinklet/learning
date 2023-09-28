@@ -1,4 +1,4 @@
 print("project5 init")
 
-#import functions
 
+#import functions.functions
