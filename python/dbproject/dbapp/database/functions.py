@@ -1,6 +1,9 @@
-from dbapp.database.models import Userdata
+from datetime import datetime
+
 from sqlalchemy import select, update
-from tabulate import tabulate
+# from tabulate import tabulate
+from dbapp.database.models import Userdata
+
 
 def db_id_exists(session, id):
     stmt = (select(Userdata.user_id).where(Userdata.user_id == id))
@@ -13,40 +16,43 @@ def db_id_exists(session, id):
 def db_write(session, id, data):
     userdata = Userdata(
         user_id = id,
-        user_data = data
+        user_data = data,
+        time_stamp = datetime.now()
     )
     session.add(userdata)
-    # session.commit()
 
-#https://docs.sqlalchemy.org/en/20/orm/queryguide/dml.html
+
+# https://docs.sqlalchemy.org/en/20/orm/queryguide/dml.html
 def db_update(session, id, data):
     stmt = (update(Userdata)
             .where(Userdata.user_id == id)
-            .values(user_data=data))
-    x = session.execute(stmt)
-    return x
-    # session.commit()
+            .values(user_data=data, time_stamp = datetime.now()))
+    session.execute(stmt)
+
 
 # old ORM method using query
-def db_update2(session, id, data):
-    row = session.query(Userdata).filter_by(user_id=id).first()
-    row.user_data = data
-    # session.commit()
-
+# def db_update(session, id, data):
+#     row = session.query(Userdata).filter_by(user_id=id).first()
+#     row.user_data = data
+#     row.time_stamp = datetime.now()
+#     # session.commit()
 
 
 def db_read(session, id):
-    stmt = (
-        select(
-            Userdata.user_id,
-            Userdata.user_data,
-            Userdata.time_stamp,
-        )
-    )
-    if id != "all":
-        stmt = stmt.where(Userdata.user_id == id)
-    query = session.execute(stmt)
-    return tabulate(query.fetchall(), headers=query.keys())
+    if id == "all":
+        stmt = select(Userdata)
+    else:
+        stmt = select(Userdata).where(Userdata.user_id == id)
+
+    # query = session.execute(stmt)
+    # print(tabulate(query.fetchall(), headers=query.keys()))
+    results = session.scalars(stmt)
+    for row in results:
+        print(row)
+
+
+def db_delete(session, id):
+    pass
 
 
 if __name__ == "__main__":
@@ -56,6 +62,5 @@ if __name__ == "__main__":
         print(db_id_exists(session, "test3"))
         print(db_id_exists(session, "test2"))
         pprint(db_update(session, "test3", "west"))
-        pprint(db_update2(session, "beans", "east"))
         pprint(db_update(session, "not_existing", "test"))
         print(db_read(session, "other_not_exists"))
