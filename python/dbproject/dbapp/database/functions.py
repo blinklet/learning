@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 # from tabulate import tabulate
 from dbapp.database.models import Userdata
 
@@ -52,7 +52,11 @@ def db_read(session, id):
 
 
 def db_delete(session, id):
-    pass
+    if db_id_exists(session, id):
+        stmt = delete(Userdata).where(Userdata.user_id == id)
+        session.execute(stmt)
+    else:
+        print(f"The user '{id}' does not exist.")
 
 
 if __name__ == "__main__":
