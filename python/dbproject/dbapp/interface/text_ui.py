@@ -1,4 +1,3 @@
-from dbapp.database.models import db_setup
 from dbapp.database.functions import db_read, db_update, db_write, db_id_exists, db_delete
 
 
@@ -59,6 +58,7 @@ def main(session):
 
 
 if __name__ == "__main__":
+    from dbapp.database.models import db_setup
     from dbapp.database.connect import Session
     db_setup()
     with Session.begin() as session:
