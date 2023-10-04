@@ -1,5 +1,9 @@
 from dbapp.database.functions import db_read, db_update, db_write, db_id_exists, db_delete
 
+"""
+Maybe re-write using cmd module?
+https://docs.python.org/3/library/cmd.html
+"""
 
 QUIT = ["quit", "", "q", "exit"]
 
