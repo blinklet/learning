@@ -7,32 +7,25 @@ from dbapp.interface.cli import read, write, update, delete
 
 def parse(arg):
     parsed_list = [] 
+
     # regex that finds single words (by themselves, or in quotes) 
     # or groups of words enclosed in quotes. 
     # Quotes may be single or double.
-    tokens = re.split(r'("[^"]*"|\'[^\']*\'|\s+)', arg)
+    items = re.findall(r'("[^"]*"|\'[^\']*\'|\b\w+\b)', arg)
 
-    for token in tokens:
-        if token:
-            if (token.startswith('"') and token.endswith('"')) or (token.startswith("'") and token.endswith("'")):
-                # Extract quoted string and add to list
-                parsed_list.append(token.strip('"\''))
-            else:
-                if token == " ":
-                    # single spaces are not words
-                    pass
-                else:
-                    # Add single word to list
-                    parsed_list.append(token)
+    for item in items:
+        if (
+            (item.startswith('"') and item.endswith('"')) or 
+            (item.startswith("'") and item.endswith("'"))
+        ):
+            parsed_list.append(item.strip('"\''))
+        else:
+            parsed_list.append(item)
 
     return(parsed_list)
 
 def two_params(params):
-    if len(params) > 2:
-        print("***Too many arguments!")
-        return False
-    elif len(params) < 2:
-        print("***Too few arguments!")
+    if len(params) != 2:
         return False
     return True
     
@@ -47,49 +40,68 @@ class AppShell(cmd.Cmd):
                          'w' : self.do_write,
                          'u' : self.do_update,
                          'd' : self.do_delete,
-                         'q' : self.do_quit
+                         'q' : self.do_quit,
                          }
     
-    intro = """Welcome to dbapp, the Database Application.
+    intro = """
+Welcome to dbapp, the Database Application.
 Type help or ? to list commands.
 """
     prompt = "dbapp> "
+
     def do_read(self, arg):
-        "Usage: read <name> [<name>]..."
-        read(self.session, parse(arg))
+        """Usage: read <name> [<name>]..."""
+        if arg != "":
+            read(self.session, parse(arg))
+        else:
+            self.onecmd('help read')
+
     def do_write(self, arg):
-        "Usage: write <name> <data>"
+        """Usage: write <name> <data>"""
         params = parse(arg)
-        if two_params(params): # check for just two arguments
+        if len(params) == 2: # check for just two arguments
             user_id, user_data = params
             write(self.session, user_id, user_data)
+        else:
+            self.onecmd("help write")
+
     def do_update(self, arg):
-        "Usage: update <name> <data>"
+        """Usage: update <name> <data>"""
         params = parse(arg)
-        if two_params(params): # check for just two arguments
+        if len(params) == 2: # check for just two arguments
             user_id, user_data = params
             update(self.session, user_id, user_data)
+        else:
+            self.onecmd("help update")
+
     def do_delete(self, arg):
-        "Usage: delete <name> [<name>]..."
-        delete(self.session, parse(arg))
+        """Usage: delete <name> [<name>]..."""
+        if arg != "":
+            delete(self.session, parse(arg))
+        else:
+            self.onecmd('help delete')
+
     def do_quit(self, arg):
-        "Usage: quit"
+        """Usage: quit"""
         return True
+     
     def do_help(self, arg):
-        '''List available commands.'''
+        """List available commands."""
         if arg in self.aliases:
             arg = self.aliases[arg].__name__[3:]
         cmd.Cmd.do_help(self, arg)
+
     def default(self, line):
         cmd, arg, line = self.parseline(line)
+        print(cmd)
         if cmd in self.aliases:
-            self.aliases[cmd](arg)
+            return self.aliases[cmd](arg) # quit returns "True", which exits the loop
         else:
-            print(f"*** Unknown syntax: {line}")
+            self.onecmd('help')
 
-
-
-
+    def emptyline(self):
+        """what to do for an empty line"""
+        self.onecmd('help')
 
 if __name__ == "__main__":
     from dbapp.database.models import db_setup

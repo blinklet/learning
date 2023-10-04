@@ -5,19 +5,19 @@ from dbapp.database.functions import db_read, db_update, db_write, db_id_exists,
 
 """Database Application.
 
-Usage:
-  dbapp.py [-i | --interactive]
-  dbapp.py read [-h | --help] <name>
-  dbapp.py write [-h | --help] <name> <data>
-  dbapp.py update [-h | --help] <name> <data>
-  dbapp.py delete [-h | --help] <name>
-  dbapp.py [-h | --help]
-  dbapp.py [-v | --version]
+Usage: 
+  dbapp.py read NAME...
+  dbapp.py write NAME DATA
+  dbapp.py update NAME DATA
+  dbapp.py delete NAME...
+  dbapp.py -i | --interactive
+  dbapp.py -h | --help
+  dbapp.py -v | --version
 
 Options:
-  -h, --help            show this help message and exit
-  -i, --interactive     Switch to interactive mode
-  -v, --version         show program's version number and exit
+  -h --help         Show this help message and exit
+  -i --interactive  Switch to interactive mode
+  --version         Show program version and exit
 """
 
 def read(session, user_id_list):
@@ -93,8 +93,7 @@ def main(session):
     parser.add_argument(
         '-i', '--interactive', 
         action='store_true', 
-        help="Switch to interactive mode")
-    
+        help="Switch to interactive mode")    
     parser.add_argument(
         '-v', '--version', 
         action='version', 
