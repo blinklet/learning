@@ -7,21 +7,16 @@ from dbapp.interface.cli import read, write, update, delete
 
 def parse(arg):
     parsed_list = [] 
-
     # regex that finds single words (by themselves, or in quotes) 
     # or groups of words enclosed in quotes. 
     # Quotes may be single or double.
     items = re.findall(r'("[^"]*"|\'[^\']*\'|\b\w+\b)', arg)
-
     for item in items:
-        if (
-            (item.startswith('"') and item.endswith('"')) or 
-            (item.startswith("'") and item.endswith("'"))
-        ):
+        if ((item.startswith('"') and item.endswith('"')) or 
+                (item.startswith("'") and item.endswith("'"))):
             parsed_list.append(item.strip('"\''))
         else:
             parsed_list.append(item)
-
     return(parsed_list)
 
 def two_params(params):
@@ -33,7 +28,7 @@ def two_params(params):
 
 class AppShell(cmd.Cmd):
     def __init__(self, session):
-        super(AppShell, self).__init__()
+        super().__init__()
         self.session = session
         # https://stackoverflow.com/questions/12911327/aliases-for-commands-with-python-cmd-module
         self.aliases = { 'r' : self.do_read,
