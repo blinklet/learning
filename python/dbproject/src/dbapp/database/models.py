@@ -1,7 +1,6 @@
 from sqlalchemy import Integer, String, UnicodeText, DateTime, func
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import mapped_column
-# from tabulate import tabulate
 
 from dbapp.database.connect import engine
 
@@ -23,10 +22,10 @@ class Userdata(Base):
     # https://stackoverflow.com/questions/22594567/sql-server-on-update-set-current-timestamp)
 
     # https://stackoverflow.com/questions/19258471/sqlalchemy-orm-init-method-vs
-    def __init__(self, user_id, user_data, time_stamp):
-        self.user_id = user_id
-        self.user_data = user_data
-        self.time_stamp = time_stamp
+    # def __init__(self, user_id, user_data, time_stamp):
+    #     self.user_id = user_id
+    #     self.user_data = user_data
+    #     self.time_stamp = time_stamp
 
     def __repr__(self):
         return f"ID = {self.user_id:10}  " \
