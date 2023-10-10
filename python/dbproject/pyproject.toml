@@ -1,0 +1,21 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dbapp"
+requires-python = ">=3.10"
+dependencies = [
+  "SQLAlchemy", 
+  "psycopg2",
+  ]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["database*", "interface*"]
+exclude = ["tests", "docs"]
+
+[project.scripts]
+dbapp = "dbproject.dbapp:main"

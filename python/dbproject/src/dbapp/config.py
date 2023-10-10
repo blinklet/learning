@@ -5,24 +5,24 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-database_server = os.getenv('DB_SERVER')
-database_port = os.getenv('DB_PORT')
-database_name = os.getenv('DB_NAME')
-database_userid = os.getenv('DB_UID')
-database_password = os.getenv('DB_PWD')
+_database_server = os.getenv('DB_SERVER')
+_database_port = os.getenv('DB_PORT')
+_database_name = os.getenv('DB_NAME')
+_database_userid = os.getenv('DB_UID')
+_database_password = os.getenv('DB_PWD')
 
 database_url = URL.create(
     drivername='postgresql+psycopg2',
-    username=database_userid,
-    password=database_password,
-    host=database_server,
-    port=database_port,
-    database=database_name
+    username=_database_userid,
+    password=_database_password,
+    host=_database_server,
+    port=_database_port,
+    database=_database_name
     )
 
 # SQLite3 database
 # database_url = "sqlite:////home/brian/db/userdata.db"
 
 if __name__ == "__main__":
-    print(database_url)
+    print(f"Database URL = {database_url}")
 

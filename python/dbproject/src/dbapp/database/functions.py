@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import select, update, delete
-# from tabulate import tabulate
+
 from dbapp.database.models import Userdata
 
 
@@ -43,28 +43,29 @@ def db_read(session, id):
         stmt = select(Userdata)
     else:
         stmt = select(Userdata).where(Userdata.user_id == id)
-
-    # query = session.execute(stmt)
-    # print(tabulate(query.fetchall(), headers=query.keys()))
-    results = session.scalars(stmt)
-    for row in results:
-        print(row)
-
+    results = session.execute(stmt)
+    return results
+    
 
 def db_delete(session, id):
     if db_id_exists(session, id):
         stmt = delete(Userdata).where(Userdata.user_id == id)
         session.execute(stmt)
+        return True
     else:
-        print(f"The user '{id}' does not exist.")
+        return False
 
 
 if __name__ == "__main__":
-    from .connect import Session
-    from pprint import pprint
+    from dbapp.database.connect import Session
+    from dbapp.database.models import db_setup
+    db_setup()
     with Session() as session:
-        print(db_id_exists(session, "test3"))
-        print(db_id_exists(session, "test2"))
-        pprint(db_update(session, "test3", "west"))
-        pprint(db_update(session, "not_existing", "test"))
-        print(db_read(session, "other_not_exists"))
+        db_write(session, "test_id1", "this is test data")
+        if db_id_exists(session, "test_id1"):
+          print("test_id1 written correctly")
+        db_update(session, "test_id1", "New data")
+        db_read(session, "test_id1")
+        db_delete(session, "test_id1")
+        if not db_id_exists(session, "test_id1"):
+          print("test_id1 deleted correctly")

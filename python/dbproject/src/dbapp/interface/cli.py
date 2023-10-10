@@ -1,7 +1,6 @@
-import sys
 import argparse
 
-from dbapp.database.functions import db_read, db_update, db_write, db_id_exists, db_delete
+from dbapp.interface.functions import read, write, update, delete
 
 """Database Application.
 
@@ -19,39 +18,6 @@ Options:
   -i --interactive  Switch to interactive mode
   --version         Show program version and exit
 """
-
-def read(session, user_id_list):
-    for uid in user_id_list:
-        if db_id_exists(session, uid) or uid == "all":
-            db_read(session, uid)
-        else:
-            print(f"User '{uid}' does not exist.")
-
-
-def update(session, user_id, user_data):
-        if db_id_exists(session, user_id):
-            db_update(session, user_id, user_data)
-            print(f"User '{user_id}' updated.")
-        else:
-            print(f"User '{user_id}' does not exist.")
-
-
-def write(session, user_id, user_data):
-    if db_id_exists(session, user_id):
-        print(f"User '{user_id}' exists! Write operation cancelled.")
-    else:
-        db_write(session, user_id, user_data)
-        print(f"New user '{user_id}' created.")
-
-
-def delete(session, user_id_list):
-    for uid in user_id_list:
-        if db_id_exists(session, uid):
-            db_delete(session, uid)
-            print(f"User '{uid}' deleted")
-        else:
-            print(f"User '{uid}' does not exist.")
-
 
 def main(session):
 
@@ -108,13 +74,15 @@ def main(session):
     match args.subparser_name:
         case 'read' | 'r': 
             read(session, args.user_id_list)
-        case'write' | 'w': 
+        case 'write' | 'w': 
             write(session, args.user_id, args.user_data)
-        case'update' | 'u': 
+        case 'update' | 'u': 
             update(session, args.user_id, args.user_data)
-        case'delete' | 'del' | 'd': 
+        case 'delete' | 'del' | 'd': 
             delete(session, args.user_id_list)
-  
+        case None:
+            parser.print_help()
+
 
 if __name__ == "__main__":
     from dbapp.database.models import db_setup
