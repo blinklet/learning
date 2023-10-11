@@ -11,17 +11,18 @@ _database_name = os.getenv('DB_NAME')
 _database_userid = os.getenv('DB_UID')
 _database_password = os.getenv('DB_PWD')
 
-database_url = URL.create(
-    drivername='postgresql+psycopg2',
-    username=_database_userid,
-    password=_database_password,
-    host=_database_server,
-    port=_database_port,
-    database=_database_name
-    )
+# database_url = URL.create(
+#     drivername='postgresql+psycopg2',
+#     username=_database_userid,
+#     password=_database_password,
+#     host=_database_server,
+#     port=_database_port,
+#     database=_database_name
+#     )
 
 # SQLite3 database
 # database_url = "sqlite:////home/brian/db/userdata.db"
+database_url = "sqlite:///C:/Users/blinklet/Documents/learning/python/dbproject/userdata.db"
 
 if __name__ == "__main__":
     print(f"Database URL = {database_url}")

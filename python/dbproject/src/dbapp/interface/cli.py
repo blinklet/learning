@@ -80,7 +80,7 @@ def main(session):
             update(session, args.user_id, args.user_data)
         case 'delete' | 'del' | 'd': 
             delete(session, args.user_id_list)
-        case None:
+        case None if not args.interactive:
             parser.print_help()
 
 

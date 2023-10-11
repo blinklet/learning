@@ -1,2 +1,7 @@
 # .env example
+DB_SERVER=localhost
+DB_PORT=5432
+DB_NAME=userdata
+DB_UID=postgres
+DB_PWD=abcd1234
 
