@@ -195,3 +195,5 @@ Trash/
 .env2
 .env*
 
+
+.~lock.*
