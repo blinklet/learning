@@ -153,8 +153,39 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    # TODO
-    raise NotImplementedError
+    start = Node(person=source, parent=None, movie_id=None)
+    frontier = StackFrontier()
+    frontier.add(start)
+
+    explored = set()
+
+    while True:
+        if frontier.empty():
+            # no connection
+            return None
+        
+        node = frontier.remove()
+
+        explored.add(node.person)
+
+        for movie_id, costar in neighbors_for_person(node.person):
+
+            if costar == target:
+                first_degree = (movie_id, costar)
+                degrees = [first_degree]
+                while node.parent is not None:
+                    next_degree = (node.movie_id, node.person)
+                    degrees.append(next_degree)
+                    node = node.parent
+                degrees.reverse()
+                return degrees
+
+            if not frontier.contains_state(costar) and costar not in explored:
+                child = Node(person=costar, parent=node, movie_id=movie_id)
+                frontier.add(child)
+
+
+
 
 
 def person_id_for_name(name):
