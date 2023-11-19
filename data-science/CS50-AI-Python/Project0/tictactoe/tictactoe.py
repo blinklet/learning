@@ -174,7 +174,7 @@ def terminal(board):
     """
     
     # Is board full?
-    if actions(board) == {}:
+    if len(actions(board)) == 0:
         return True
     
     # did someone win?
@@ -204,7 +204,7 @@ def utility(board):
         return 0
         
 
-def minimax(board):
+def minimax2(board):
     """
     Returns the optimal action for the current player on the board.
     The minimax function should take a board as input, and return the optimal 
@@ -217,21 +217,51 @@ def minimax(board):
     
     if terminal(board):
         score = utility(board)
-        return score
-                
-    if player(board) == X:  # X is maximizing player
-        lowest_value = -2
-        for action in actions(board):
-            value = max(value, utility(result(board, action))
-            if value > lowest_value:
-                lowest_value = value
-                best_action = action
-    else: # O player is minimizing player
-        highest_value = 2
-        for action in actions(board):
-            value = min(value, utility(result(board, action))
+        return None
     
-def minimax2(board):
+    
+    
+    if player(board) == X:  # X is maximizing player
+        print("XXXXX")
+        value = -2
+        next_board = copy.deepcopy(board)
+        for action in actions(next_board):
+            
+        
+        
+        
+        
+            next_board = result(next_board, action)
+            next_action = minimax(next_board)
+            if terminal(next_board):
+                continue
+            else:
+                next_value = max(value, utility(next_board))
+                print("X Values", value, next_value)
+                if next_value > value:
+                    value = next_value
+                    best_action = action
+                    print("Best X Action", best_action)   
+                return best_action        
+    else: # O player is minimizing player
+        print("OOOOO")
+        value = 2
+        next_board = copy.deepcopy(board)
+        for action in actions(next_board):
+            next_board = result(next_board, action)
+            next_action = minimax(next_board)
+            if next_action == None:
+                continue
+            else:
+                next_value = min(value, utility(next_board))
+                print("O Values", value, next_value)
+                if next_value < value:
+                    value = next_value
+                    best_action = action
+                    print("Best O Action", best_action)
+                return best_action
+    
+def minimax(board):
     """
     Returns the optimal action for the current player on the board.
     The minimax function should take a board as input, and return the optimal 
@@ -243,53 +273,156 @@ def minimax2(board):
     """
     
     def max_score(board):
+    
         if terminal(board):
             score = utility(board)
             return score
+            
         score = -2  # "negative infinity" is -2 in this game
-        for move in moves:
+        for move in actions(board):
             nextboard = result(board, move)
             score = max(score, min_score(nextboard))
         return score
     
     def min_score(board):
+    
         if terminal(board):
             score = utility(board)
             return score
+            
         score = 2  # "infinity" is 2 in this game
-        for move in moves:
+        for move in actions(board):
             nextboard = result(board, move)
             score = min(score, max_score(nextboard))
         return score
-        
-    # X is the maximizer, O is the minimizer
     
-    if terminal(board):
-        return None
-    
-    minmaxboard = copy.deepcopy(board)
-    scores = []
-        
-    if player(minmaxboard) == X:  # maximizer
-        max_score = -2  # "infinity" is -2 in this game
-        for move in moves:
-            if terminal(minmaxboard):
-                value = utility(minmaxboard)
-            else:
-                minmaxboard = result(copy.deepcopy(board
-    
-    for move in moves:
-        if player(board) == X:
-            pass # maximize
-        else:
-            pass # minimize
-        
-        
-    
-    return moves.pop()
-    
-    
+    print(board)
+    if player(board) == X:  # maximizer
+        print("XXXXX")
+        score = -2  # "negative infinity" is -2 in this game
+        evaluated_moves = []
+        print(actions(board))
+        for action in actions(board):
+            next_board = result(board, action)
+            next_score = min_score(next_board)
+            evaluated_moves.append((next_score, action))
+        print("X:   ", evaluated_moves)
+        for move in evaluated_moves:
+            if move[0] > score:
+                score = move[0]
+                best_move = move[1]
+        return best_move
+          
+    if player(board) == O:  # minimizer
+        print("OOOOO")
+        score = 2  # "infinity" is 2 in this game
+        evaluated_moves = []
+        for action in actions(board):
+            next_board = result(board, action)
+            next_score = max_score(next_board)
+            evaluated_moves.append((next_score, action))
+        print("O:   ", evaluated_moves)
+        for move in evaluated_moves:
+            if move[0] < score:
+                score = move[0]
+                best_move = move[1]
+        return best_move
 
+
+def minimax5(board):
+    """
+    Returns the optimal action for the current player on the board.
+
+    'X' Player is trying to maximise the score, 'O' Player is trying to minimise it
+    """
+
+    global actions_explored
+    actions_explored = 0
+
+    def max_player(board, best_min = 10):
+      """ Helper function to maximise score for 'X' player.
+          Uses alpha-beta pruning to reduce the state space explored.
+          best_min is the best result
+      """
+
+      global actions_explored
+
+      # If the game is over, return board value
+      if terminal(board):
+        return (utility(board), None)
+
+      # Else pick the action giving the max value when min_player plays optimally
+      value = -10
+      best_action = None
+
+
+      # Get set of actions and then select a random one until list is empty:
+      action_set = actions(board)
+
+      while len(action_set) > 0:
+        action = random.choice(tuple(action_set))
+        action_set.remove(action)
+
+        # A-B Pruning skips calls to min_player if lower result already found:
+        if best_min <= value:
+          break
+
+        actions_explored += 1
+        min_player_result = min_player(result(board, action), value)
+        if min_player_result[0] > value:
+          best_action = action
+          value = min_player_result[0]
+
+      return (value, best_action)
+
+
+    def min_player(board, best_max = -10):
+      """ Helper function to minimise score for 'O' player """
+
+      global actions_explored
+
+      # If the game is over, return board value
+      if terminal(board):
+        return (utility(board), None)
+
+      # Else pick the action giving the min value when max_player plays optimally
+      value = 10
+      best_action = None
+
+      # Get set of actions and then select a random one until list is empty:
+      action_set = actions(board)
+
+      while len(action_set) > 0:
+        action = random.choice(tuple(action_set))
+        action_set.remove(action)
+
+        # A-B Pruning skips calls to max_player if higher result already found:
+        if best_max >= value:
+          break
+
+        actions_explored += 1
+        max_player_result = max_player(result(board, action), value)
+        if max_player_result[0] < value:
+          best_action = action
+          value = max_player_result[0]
+
+      return (value, best_action)
+
+
+    # If the board is terminal, return None:
+    if terminal(board):
+      return None
+
+    if player(board) == 'X':
+      print('AI is exploring possible actions...')
+      best_move = max_player(board)[1]
+      print('Actions explored by AI: ', actions_explored)
+      return best_move
+    else:
+      print('AI is exploring possible actions...')
+      best_move = min_player(board)[1]
+      print('Actions explored by AI: ', actions_explored)
+      return best_move
     
     
     
