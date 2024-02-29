@@ -4,7 +4,7 @@ https://dev.to/saluminati/dockerize-wordpress-with-themes-plugins-and-common-con
 https://developer.wordpress.com/2022/11/14/seetup-local-development-environment-for-wordpress/
 
 
-
+https://www.wpbeginner.com/wp-tutorials/how-to-move-live-wordpress-site-to-local-server/
 
 
 # Stop Wordpress from trying to use FTP to get backups and plugins
@@ -66,3 +66,18 @@ $ docker exec -it wordpress bash
 # apt install php7.4-{cli,common,curl,zip,gd,mysql,xml,mbstring,json,intl}
 # update-alternatives --config php
 ```
+
+# clear volume
+
+To start over: must also delete the docker volume *wordpress_db_data*
+
+```
+$ docker volume ls
+$ docker volume rm wordpress_db_data
+```
+
+# The Standard Theme is the problem!!!
+
+If I activate the standard theme, the web site fails. It seems to be incompatible with PHP 8.2. As soon as Bluehost updates their servers to Ubuntu 22 or 24, I am toast!!! (PHP 8.x is in Ubuntu 22 and 24)
+
+https://support.rebel.com/hc/en-us/articles/360047782954-How-do-I-fix-a-WordPress-website-broken-by-a-PHP-upgrade-Classic-Hosting

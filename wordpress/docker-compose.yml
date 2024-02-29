@@ -1,16 +1,17 @@
 version: "3.6"
 services:
  wordpress:
-   image: wordpress:latest
+   image: wordpress:php7.4
    container_name: wordpress
    volumes:
-     - ./wordpress:/var/www/html
+     - html:/var/www/html
    environment:
      - WORDPRESS_DB_NAME=wordpress
      - WORDPRESS_TABLE_PREFIX=wp_
      - WORDPRESS_DB_HOST=db
      - WORDPRESS_DB_USER=root
      - WORDPRESS_DB_PASSWORD=password
+     - WORDPRESS_DEBUG=1
    depends_on:
      - db
      - phpmyadmin
@@ -44,3 +45,4 @@ services:
  
 volumes:
  db_data:
+ html:
