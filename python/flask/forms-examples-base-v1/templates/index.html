@@ -1,0 +1,36 @@
+<!-- templates/index.html -->
+
+{% extends "base.html" %}
+{% block title %}Index{% endblock %}
+
+{% block content %}
+    <div class="container_fluid p-3">
+        <h1>Profiles</h1>
+          <table id="profiles" class="table table-striped">
+	    <thead>
+	      <tr>
+		<th>Name</th>
+		<th>Height (cm)</th>
+		<th>Weight (kg)</th>
+		<th>Email</th>
+		<th>Birthdate</th>
+		<th>Updated</th>
+	      </tr>
+	    </thead>
+	    <tbody>
+	      {% for person in profiles %}
+		<tr>
+		  <td>{{ person.firstname }} {{ person.lastname }}</td>
+		  <td>{{ person.height }}</td>
+		  <td>{{ person.weight }}</td>
+		  <td>{{ person.email }}</td>
+		  <td>{{ person.birthdate }}</td>
+		  <td>{{ person.last_update }}</td>
+		</tr>
+	      {% endfor %}
+	    </tbody>
+	  </table>
+    </div>
+{% endblock %}
+
+{% block additional_css %}{% endblock %}
