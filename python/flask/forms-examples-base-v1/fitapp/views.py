@@ -2,7 +2,8 @@
 
 import flask
 import sqlalchemy as sa
-from database import db, Profile
+from fitapp.database import db
+from fitapp.models import Profile
 
 bp = flask.Blueprint(
     'views',

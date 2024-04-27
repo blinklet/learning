@@ -3,9 +3,9 @@
 import flask
 import flask_bootstrap
 
-import database
-import views
-import commands
+import fitapp.database as database
+import fitapp.views as views
+import fitapp.commands as commands
 
 
 def create_app():

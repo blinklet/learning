@@ -1,0 +1,29 @@
+[
+    {
+        "firstname": "Brad", 
+        "lastname": "Chadwick", 
+        "email": "brad@fakemail.com", 
+        "height": 184.5, 
+        "weight": 90.25, 
+        "birthdate": "1999-04-15", 
+        "last_update": "2024-05-30 13:33:56"
+    }, 
+    {
+        "firstname": "Lisa", 
+        "lastname": "Welstone", 
+        "email": "lisa@notmail.com", 
+        "height": 163.0, 
+        "weight": 63.5, 
+        "birthdate": "1996-12-20", 
+        "last_update": "2024-04-15 09:30:44"
+    }, 
+    {
+        "firstname": "Gerald", 
+        "lastname": "Lightstone", 
+        "email": "gerald@newmail.com", 
+        "height": 181.0, 
+        "weight": 50.75, 
+        "birthdate": "1987-01-20", 
+        "last_update": "2024-01-01 08:00:21"
+    }
+]
