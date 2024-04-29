@@ -17,11 +17,11 @@ def create():
 @bp.cli.command('add-data')
 @click.argument("filename")
 def add_data(filename):
-    f = os.path.join(os.getcwd(), filename)
+    fl = os.path.join(os.getcwd(), filename)
     try:
-        file = open(f, "r")
+        file = open(fl, "r")
     except FileNotFoundError:
-        print(f"ERROR: {f} does not exist")
+        print(f"ERROR: {fl} does not exist")
     else:
         with file:
             data = json.load(file)

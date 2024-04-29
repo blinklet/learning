@@ -1,0 +1,13 @@
+<!-- mfo/home/templates/index.html -->
+
+{% extends "base.html" %}
+
+{% block title %}Home page{% endblock %}
+
+{% block content %}
+    <h1>Home page</h1>
+{% endblock %}
+
+{% block additional_css %}
+    <link rel="stylesheet" href="{{ url_for('home.static', filename='css/styles.css') }}" >
+{% endblock %}

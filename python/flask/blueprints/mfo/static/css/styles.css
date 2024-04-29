@@ -1,0 +1,11 @@
+/*  mfo/static/css/styles.css  */
+
+.content {
+    padding: 20px;
+}
+
+h1 {
+    font-weight: bold;
+    color: rgb(0, 0, 0);
+    font-size: 32px;
+  }
