@@ -2,6 +2,8 @@
 
 import flask
 import mfo.home.views
+import mfo.account.views
+import mfo.admin.views
 
 def create_app():
 
@@ -13,5 +15,7 @@ def create_app():
 
     # Register blueprints
     app.register_blueprint(mfo.home.views.bp)
-
+    app.register_blueprint(mfo.account.views.bp)
+    app.register_blueprint(mfo.admin.views.bp)
+    
     return app

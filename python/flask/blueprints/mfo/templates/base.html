@@ -1,17 +1,24 @@
-<!-- mfo/templates/index.html -->
+<!-- mfo/templates/base.html -->
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Example Website{% endblock %}</title>
+    <title>{% block title %}Music Festival Website{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/styles.css" />
     {% block additional_css %}{% endblock %}
 </head>
 
 <body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="{{ url_for('account.index') }}">Account</a>
+        <a href="{{ url_for('admin.index') }}">Admin</a>
+    </nav>
+
     <div class="content">
         {% block content %}
+        <h1>This is a simple example page</h1>
         {% endblock %}
     </div>
 </body>
